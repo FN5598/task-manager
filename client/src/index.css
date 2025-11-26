@@ -1,0 +1,68 @@
+@import 'tailwindcss';
+
+@theme {
+    --color-text: var(--text);
+    --color-text-muted: var(--text-muted);
+    
+    --color-bg-dark: var(--bg-dark);
+    --color-bg: var(--bg);
+    --color-bg-light: var(--bg-light);
+
+    --color-highlight: var(--highlight);
+
+    --color-border-color: var(--border);
+    --color-border-muted: var(--border-muted);
+
+    --color-primary: var(--primary);
+    --color-secondary: var(--secondary);
+    
+    --color-danger: var(--danger);
+    --color-warning: var(--warning);
+    --color-success: var(--success);
+    --color-info: var(--info);
+}
+
+:root {
+    --text: hsl(300 0% 95%);
+    --text-muted: hsl(300 0% 69%);
+
+    --bg-dark: hsl(336 0% 1%);
+    --bg: hsl(300 0% 4%);
+    --bg-light: hsl(0 0% 9%);
+
+    --highlight: hsl(330 0% 39%);
+
+    --border: hsl(0 0% 28%);
+    --border-muted: hsl(300 0% 18%);
+
+    --primary: hsl(220 78% 76%);
+    --secondary: hsl(40 53% 60%);
+
+    --danger: hsl(9 26% 64%);
+    --warning: hsl(52 19% 57%);
+    --success: hsl(146 17% 59%);
+    --info: hsl(217 28% 65%);
+}
+
+body.light {
+    --text: hsl(300 0% 4%);
+    --text-muted: hsl(0 0% 28%);
+
+    --bg-dark: hsl(0 0% 90%);
+    --bg: hsl(300 0% 95%);
+
+    --bg-light: hsl(300 50% 100%);
+
+    --highlight: hsl(300 50% 100%);
+
+    --border: hsl(NaN 0% 50%);
+    --border-muted: hsl(340 0% 62%);
+
+    --primary: hsl(221 49% 33%);
+    --secondary: hsl(44 100% 14%);
+
+    --danger: hsl(9 21% 41%);
+    --warning: hsl(52 23% 34%);
+    --success: hsl(147 19% 36%);
+    --info: hsl(217 22% 41%);
+}
