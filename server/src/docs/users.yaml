@@ -1,0 +1,100 @@
+paths:
+  /users:
+    get:
+      summary: Get all existing users
+      tags: 
+        - Users 
+      responses: 
+        '404':
+          description: No users found
+        '500':
+          description: Server error
+        '200':
+          description: Successfully fetched users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUsersResponse'
+  /users/{id}:
+    get:
+      summary: Get specific user by ID
+      tags: 
+        - Users 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses: 
+        '400':
+          description: ID is required
+        '404':
+          description: No users found
+        '500':
+          description: Server error
+        '200':
+          description: Successfully fetched users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUserResponse'
+    delete:
+      summary: Delete specific user by ID
+      tags: 
+        - Users 
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses: 
+        '400':
+          description: ID is required
+        '404':
+          description: No users found
+        '500':
+          description: Server error
+        '200':
+          description: Successfully delete user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteUserResponse'
+
+components:
+  schemas:
+    GetUsersResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Successfully fetched users
+        success:
+          type: boolean
+          example: true
+        users:
+          $ref: './schemas.yaml#/components/schemas/User'
+    DeleteUserResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Successfully deleted user
+        success:
+          type: boolean
+          example: true
+        user:
+          $ref: './schemas.yaml#/components/schemas/User'
+    GetUserResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Successfully fetched user
+        success:
+          type: boolean
+          example: true
+        user:
+          $ref: './schemas.yaml#/components/schemas/User'

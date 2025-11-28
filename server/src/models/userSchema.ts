@@ -18,7 +18,8 @@ const userSchema = new Schema<IUser>({
     },
     hashedPassword: {
         type: String,
-        required: true
+        required: true,
+        select: false
     },
     refreshToken: {
         type: String

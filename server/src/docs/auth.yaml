@@ -1,0 +1,138 @@
+paths:
+  /auth/login:
+    post: 
+      summary: Login into existing account
+      tags: 
+        - Auth
+      requestBody: 
+        required: true
+        content: 
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginInput'
+      responses:
+        '200':
+          description:  Successfully Logged In 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthReponse'
+        '500': 
+          description: Server Error/Missing JWT env variables
+        '401':
+          description: Invalid credentials
+        '404': 
+          description: User doesn't exist
+        '400':
+          description: Email and Password is required to Login into account
+  /auth/sign-up:
+    post:
+      summary: Register a new account
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterInput'
+      responses:
+        '201':
+          description: Successfully Registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthReponse'
+        '409':
+          description: Email already in use
+        '400':
+          description: Email and Password is required to Register an account
+        '500':
+          description: Server Error
+  /auth/logout:
+    post:
+      summary: Logout from the current session
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: Successfully Logged Out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logged out successfully"
+                  success:
+                    type: boolean
+                    example: true
+        '500':
+          description: Server Error
+  /auth/refresh:
+    get:
+      summary: Refresh access token
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: Access token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Access token refreshed"
+                  success:
+                    type: boolean
+                    example: true
+                  accessToken:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          description: Unauthorized - Invalid refresh token
+        '500':
+          description: Server Error
+
+components:
+  schemas:
+    UserLoginInput:
+      type: object
+      required:
+        - email 
+        - password
+      properties:
+        email: 
+          type: string
+          example: "john@email.com"
+        password: 
+          type: string
+          example: "password1234"
+
+    UserRegisterInput:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: "jane.doe@example.com"
+        password:
+          type: string
+          example: "securepassword456"
+
+    AuthReponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Successfully Logged In"
+        success:
+          type: boolean
+          example: true
+        user:
+          $ref: './schemas.yaml#/components/schemas/User'

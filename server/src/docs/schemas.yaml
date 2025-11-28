@@ -1,0 +1,14 @@
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        _id: 
+          type: string
+        email: 
+          type: string
+        hashedPassword:
+          type: string
+        createdAt:
+          type: string
+          format: date-time

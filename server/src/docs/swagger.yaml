@@ -1,0 +1,40 @@
+openapi: 3.0.0
+info:
+  title: Task Manager API
+  version: 1.0.0
+
+paths:
+  /auth/login:
+    $ref: './auth.yaml#/paths/~1auth~1login'
+  /auth/sign-up:
+    $ref: './auth.yaml#/paths/~1auth~1sign-up'
+  /auth/logout:
+    $ref: './auth.yaml#/paths/~1auth~1logout'
+  /auth/refresh:
+    $ref: './auth.yaml#/paths/~1auth~1refresh'
+  /users:
+    $ref: './users.yaml#/paths/~1users'
+  /users/{id}:
+    $ref: './users.yaml#/paths/~1users~1{id}'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UserLoginInput:
+      $ref: './auth.yaml#/components/schemas/UserLoginInput'
+    UserRegisterInput:
+      $ref: './auth.yaml#/components/schemas/UserRegisterInput'
+    AuthReponse:
+      $ref: './auth.yaml#/components/schemas/AuthReponse'
+    User:
+      $ref: './schemas.yaml#/components/schemas/User'
+    GetUsersResponse:
+      $ref: './users.yaml#/components/schemas/GetUsersResponse'
+    GetUserResponse:
+      $ref: './users.yaml#/components/schemas/GetUserResponse'
+    DeleteUserResponse:
+      $ref: './users.yaml#/components/schemas/DeleteUserResponse'

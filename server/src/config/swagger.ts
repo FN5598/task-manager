@@ -1,27 +1,14 @@
 import swaggerUi from "swagger-ui-express";
-import swaggerJsdoc from "swagger-jsdoc";
+import SwaggerParser from "@apidevtools/swagger-parser";
 import { Express } from "express";
 
 
-export const setupSwagger = (app: Express) => {
-    const options = {
-        definition: {
-            openapi: "3.0.0",
-            info: { title: "Task Manager API", version: "1.0.0" },
-            components: {
-                securitySchemes: {
-                    bearerAuth: {
-                        type: "http",
-                        scheme: "bearer",
-                        bearerFormat: "JWT",
-                    },
-                },
-            },
-        },
-        apis: ["./src/routes/*.ts"],
-    };
-
-    const swaggerSpec = swaggerJsdoc(options);
-
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+export const setupSwagger = async (app: Express) => {
+    try {
+        const api = await SwaggerParser.dereference("./src/docs/swagger.yaml");
+        
+        app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(api));
+    } catch (err) {
+        console.error("Failed to setup Swagger:", err);
+    }
 }
