@@ -3,7 +3,7 @@
 @theme {
     --color-text: var(--text);
     --color-text-muted: var(--text-muted);
-    
+
     --color-bg-dark: var(--bg-dark);
     --color-bg: var(--bg);
     --color-bg-light: var(--bg-light);
@@ -15,14 +15,20 @@
 
     --color-primary: var(--primary);
     --color-secondary: var(--secondary);
-    
+
     --color-danger: var(--danger);
     --color-warning: var(--warning);
     --color-success: var(--success);
     --color-info: var(--info);
 }
 
-:root {
+body {
+    @apply m-0 p-0;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+:root,
+.dark {
     --text: hsl(300 0% 95%);
     --text-muted: hsl(300 0% 69%);
 
@@ -44,7 +50,7 @@
     --info: hsl(217 28% 65%);
 }
 
-body.light {
+.light {
     --text: hsl(300 0% 4%);
     --text-muted: hsl(0 0% 28%);
 
@@ -55,7 +61,7 @@ body.light {
 
     --highlight: hsl(300 50% 100%);
 
-    --border: hsl(NaN 0% 50%);
+    --border: hsl(0 0% 50%);
     --border-muted: hsl(340 0% 62%);
 
     --primary: hsl(221 49% 33%);

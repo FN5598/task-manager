@@ -1,9 +1,54 @@
+import { Route, Routes } from 'react-router-dom';
+import { HomePage } from './pages/HomePage';
+import { LoginPage } from './pages/LoginPage';
+import { SignupPage } from './pages/SignupPage';
+import { TaskPage } from './pages/TaskPage';
+import { ToastContainer } from 'react-toastify';
+import { useEffect } from 'react';
+
 function App() {
+
+
+  useEffect(() => {
+    const isLightTheme = localStorage.getItem("isLightTheme");
+    if (isLightTheme === "light") {
+      document.documentElement.classList.add("light");
+    } else {
+      document.documentElement.classList.remove("light");
+    }
+  }, [])
+
+
   return (
     <>
-      <h1 className="text-3xl text-red-500 mb-auto mt-auto flex justify-center">Hi</h1>
+      {/* Alert Pop Up */}
+      <ToastContainer
+        position="top-center"
+        autoClose={5000}
+        limit={1}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+
+
+      {/* All Routes */}
+      <Routes>
+        <Route index element={<HomePage />} />
+
+        <Route path="/task/:id" element={<TaskPage />} />
+
+        {/* Auth routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/sign-up" element={<SignupPage />} />
+      </Routes>
     </>
-  )
+  );
 }
 
 export default App
