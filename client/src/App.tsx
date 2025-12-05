@@ -5,6 +5,7 @@ import { SignupPage } from './pages/SignupPage';
 import { TaskPage } from './pages/TaskPage';
 import { ToastContainer } from 'react-toastify';
 import { useEffect } from 'react';
+import { CanvasPage } from "./pages/CanvasPage";
 
 function App() {
 
@@ -46,6 +47,8 @@ function App() {
         {/* Auth routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/sign-up" element={<SignupPage />} />
+
+        <Route path="/canvas" element={<CanvasPage />} />
       </Routes>
     </>
   );

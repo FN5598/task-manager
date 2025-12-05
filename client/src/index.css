@@ -54,7 +54,7 @@ body {
     --text: hsl(300 0% 4%);
     --text-muted: hsl(0 0% 28%);
 
-    --bg-dark: hsl(0 0% 90%);
+    /* --bg-dark: hsl(0 0% 90%); */
     --bg: hsl(300 0% 95%);
 
     --bg-light: hsl(300 50% 100%);

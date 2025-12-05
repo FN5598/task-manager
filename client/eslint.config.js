@@ -17,6 +17,9 @@ export default defineConfig([
     ],
     languageOptions: {
       ecmaVersion: 2020,
+      parserOptions: {
+        jsxPragma: null, // React is automatically in scope for JSX
+      },
       globals: globals.browser,
     },
   },
