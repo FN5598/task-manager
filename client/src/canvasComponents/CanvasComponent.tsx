@@ -1,10 +1,25 @@
 import { ColorPickerComponent } from "../canvasComponents/ColorPickerComponent";
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
+import { Socket } from "socket.io-client";
+
+type CanvasComponentProps = {
+    socket: Socket;
+}
+
+interface DrawData {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    color: string;
+    lineWidth: number;
+    isEraser: boolean;
+}
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 
-export function CanvasComponent() {
+export function CanvasComponent({ socket }: CanvasComponentProps) {
 
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -14,6 +29,43 @@ export function CanvasComponent() {
     const lastPosRef = useRef<{ x: number, y: number } | null>(null);
     const [isEraser, setIsEraser] = useState(false);
     const [colorPicker, setColorPicker] = useState(false);
+
+    function handleDraw(data: DrawData) {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext("2d");
+        if (!ctx) return;
+
+        const { x1, y1, x2, y2, color, lineWidth, isEraser } = data;
+        if (isEraser) {
+            ctx.globalCompositeOperation = "destination-out";
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = "rgba(0,0,0,1)";
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineCap = "round";
+            ctx.stroke();
+            ctx.globalCompositeOperation = "source-over";
+        } else {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+    };
+
+    useEffect(() => {
+        // Listen for draw events from other clients
+        socket.on("draw", handleDraw);
+
+        // Cleanup on unmount
+        return () => {
+            socket.off("draw", handleDraw);
+        };
+    }, [socket])
 
     function getCursorPos(e: React.MouseEvent<HTMLCanvasElement>) {
         const canvas = canvasRef.current;
@@ -55,8 +107,16 @@ export function CanvasComponent() {
                 ctx.stroke();
                 ctx.globalCompositeOperation = "source-over";
             }
+            socket.emit("draw", {
+                x1: lastPosRef.current.x,
+                y1: lastPosRef.current.y,
+                x2: pos.x,
+                y2: pos.y,
+                color,
+                lineWidth,
+                isEraser
+            });
         }
-
         lastPosRef.current = pos;
     }
 
@@ -83,7 +143,7 @@ export function CanvasComponent() {
     }
 
     return (
-        <div className="text-text flex justify-center m-auto flex-col p-0 h-screen bg-bg-light">
+        <div className="text-text flex flex-col p-10 ">
             <h1 className="text-center">Some word here</h1>
             <canvas
                 style={{
@@ -91,7 +151,7 @@ export function CanvasComponent() {
                     height: `${CANVAS_HEIGHT}px`,
                     display: 'block'
                 }}
-                className="border border-color-bg-light bg-gray-200 cursor-crosshair w-800 h-600 ml-auto mr-auto mt-10"
+                className="border border-color-bg-light bg-gray-200 cursor-crosshair w-800 h-600 mt-10"
                 ref={canvasRef}
                 width={CANVAS_WIDTH}
                 height={CANVAS_HEIGHT}
@@ -100,7 +160,7 @@ export function CanvasComponent() {
                 onMouseMove={handleMouseMove}
             ></canvas>
 
-            <div className="flex gap-4 items-center mb-4 ml-auto mr-auto">
+            <div className="flex gap-4 items-center mb-4">
                 <label htmlFor="lineWidth">Line Width:</label>
                 <input
                     id="lineWidth"

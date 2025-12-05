@@ -2,6 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/connectDB";
+import { Server } from "socket.io";
+import http from 'http';
 import cookieParser from "cookie-parser";
 import { setupSwagger } from "./config/swagger";
 
@@ -19,7 +21,7 @@ connectDB();
 
 // Middlewares
 app.use(cors({
-    origin: process.env.CLIENT_URL,
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true
 }));
 app.use(express.json());
@@ -29,6 +31,34 @@ app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use('/tasks', taskRoutes);
 
-app.listen(process.env.PORT || 5000, () => {
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+    cors: {
+        origin: process.env.CLIENT_URL || "http://localhost:5173",
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
+
+io.on('connection', (socket) => {
+    console.log("New client connected", socket.id);
+
+    socket.on("message", (data) => {
+        console.log("Recived message", data);
+        io.emit("message", data);
+    });
+
+    socket.on("draw", (data) => {
+        io.emit("draw", data);
+    })
+
+    socket.on("disconnect", () => {
+        console.log("Client disconnected", socket.id);
+    })
+})
+
+server.listen(process.env.PORT || 5000, () => {
     console.log(`Server running on port ${process.env.PORT}`);
 })

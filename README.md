@@ -5,6 +5,7 @@ A simple and fast full-stack task manager application built with React + Vite on
 # 🚀 Features
 - Create, edit, and delete tasks
 - Mark tasks as complete
+- Interactive Drawing Board
 - Light/Dark theme toggle
 - Clean and responsive UI
 - Organized client/server folder structure
