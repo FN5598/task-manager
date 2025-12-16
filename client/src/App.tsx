@@ -2,13 +2,26 @@ import { Route, Routes } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
-import { TaskPage } from './pages/TaskPage';
 import { ToastContainer } from 'react-toastify';
 import { useEffect } from 'react';
 import { CanvasPage } from "./pages/CanvasPage";
+import { io, Socket } from "socket.io-client";
+import { useState } from "react";
+
+// Initialize socket connection outside the component
+const socket: Socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000", { autoConnect: false });
 
 function App() {
 
+  const [joined, setJoined] = useState<boolean>(false);
+  const [roomId, setRoomId] = useState<string>("");
+
+  function joinRoom(roomId: string) {
+    if (!socket.connected) {
+      socket.connect();
+    }
+    socket.emit("join-room", roomId);
+  }
 
   useEffect(() => {
     const isLightTheme = localStorage.getItem("isLightTheme");
@@ -17,7 +30,7 @@ function App() {
     } else {
       document.documentElement.classList.remove("light");
     }
-  }, [])
+  }, []);
 
 
   return (
@@ -40,15 +53,13 @@ function App() {
 
       {/* All Routes */}
       <Routes>
-        <Route index element={<HomePage />} />
-
-        <Route path="/task/:id" element={<TaskPage />} />
+        <Route index element={<HomePage socket={socket} setJoined={setJoined} setRoomId={setRoomId} joinRoom={joinRoom} />} />
 
         {/* Auth routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/sign-up" element={<SignupPage />} />
 
-        <Route path="/canvas" element={<CanvasPage />} />
+        <Route path="/canvas/:roomId" element={<CanvasPage socket={socket} joined={joined} setJoined={setJoined} roomId={roomId} setRoomId={setRoomId} />} />
       </Routes>
     </>
   );

@@ -5,7 +5,7 @@ export function HeaderComponent() {
     function changeTheme() {
         let currentTheme = '';
         const theme = document.documentElement.classList.toggle("light");
-        if(theme == true) currentTheme = "light"
+        if (theme == true) currentTheme = "light"
         localStorage.setItem("isLightTheme", currentTheme || "dark");
     }
 

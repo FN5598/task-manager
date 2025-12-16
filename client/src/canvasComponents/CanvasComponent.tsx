@@ -1,9 +1,15 @@
 import { ColorPickerComponent } from "../canvasComponents/ColorPickerComponent";
 import { useRef, useState, useEffect } from "react"
 import { Socket } from "socket.io-client";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import transformWordToLetters from "../utils/transformWordToLetters";
 
 type CanvasComponentProps = {
     socket: Socket;
+    joined: boolean;
+    setJoined: (value: boolean) => void;
+    setRoomId: (value: string) => void;
 }
 
 interface DrawData {
@@ -19,9 +25,12 @@ interface DrawData {
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 
-export function CanvasComponent({ socket }: CanvasComponentProps) {
+export function CanvasComponent({ socket, joined, setJoined, setRoomId }: CanvasComponentProps) {
 
+    const navigate = useNavigate();
+    const theme = localStorage.getItem("isLightTheme");
 
+    const [wordToGuess, setWordToGuess] = useState<string>('');
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [lineWidth, setLineWidth] = useState(1);
     const [drawing, setDrawing] = useState(false);
@@ -30,42 +39,61 @@ export function CanvasComponent({ socket }: CanvasComponentProps) {
     const [isEraser, setIsEraser] = useState(false);
     const [colorPicker, setColorPicker] = useState(false);
 
-    function handleDraw(data: DrawData) {
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext("2d");
-        if (!ctx) return;
-
-        const { x1, y1, x2, y2, color, lineWidth, isEraser } = data;
-        if (isEraser) {
-            ctx.globalCompositeOperation = "destination-out";
-            ctx.lineWidth = lineWidth;
-            ctx.strokeStyle = "rgba(0,0,0,1)";
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineCap = "round";
-            ctx.stroke();
-            ctx.globalCompositeOperation = "source-over";
-        } else {
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = lineWidth;
-            ctx.lineCap = "round";
-            ctx.stroke();
-        }
-    };
-
     useEffect(() => {
+        function handleDraw(data: DrawData) {
+            if (!joined) return;
+
+            const canvas = canvasRef.current;
+            const ctx = canvas?.getContext("2d");
+            if (!ctx) return;
+
+            const { x1, y1, x2, y2, color, lineWidth, isEraser } = data;
+            if (isEraser) {
+                ctx.globalCompositeOperation = "destination-out";
+                ctx.lineWidth = lineWidth;
+                ctx.strokeStyle = "rgba(0,0,0,1)";
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.lineCap = "round";
+                ctx.stroke();
+                ctx.globalCompositeOperation = "source-over";
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.lineCap = "round";
+                ctx.stroke();
+            }
+        }
         // Listen for draw events from other clients
         socket.on("draw", handleDraw);
 
+        socket.on("user-left", () => {
+            toast.info("A user has left the room.", {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: `${theme}`
+            })
+        });
+
+        socket.on("word-to-guess", (word: string) => {
+            setWordToGuess(word);
+        })
         // Cleanup on unmount
         return () => {
             socket.off("draw", handleDraw);
+            socket.off("word-to-guess");
+            socket.off("user-left");
         };
-    }, [socket])
+    }, [socket, theme, joined]);
 
     function getCursorPos(e: React.MouseEvent<HTMLCanvasElement>) {
         const canvas = canvasRef.current;
@@ -142,16 +170,31 @@ export function CanvasComponent({ socket }: CanvasComponentProps) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
+    function handleLeave() {
+        console.log("Leaving room", joined);
+        if (!joined) return;
+        socket.emit("leave-room");
+        setJoined(false);
+        setRoomId("");
+        navigate(`/`);
+    }
+
     return (
-        <div className="text-text flex flex-col p-10 ">
-            <h1 className="text-center">Some word here</h1>
+        <div className="text-text flex flex-col p-10">
+            <div className="flex justify-center text-2xl">
+                {wordToGuess && (transformWordToLetters(wordToGuess)?.map((char, index) => (
+                    <p key={index} className="inline-block w-5 mr-1 border-b text-center">{char}</p>
+                )))
+                }
+            </div>
+
             <canvas
                 style={{
                     width: `${CANVAS_WIDTH}px`,
                     height: `${CANVAS_HEIGHT}px`,
                     display: 'block'
                 }}
-                className="border border-color-bg-light bg-gray-200 cursor-crosshair w-800 h-600 mt-10"
+                className="border border-color-bg-light bg-gray-200 cursor-crosshair w-800 h-600 mt-4.5"
                 ref={canvasRef}
                 width={CANVAS_WIDTH}
                 height={CANVAS_HEIGHT}
@@ -199,6 +242,9 @@ export function CanvasComponent({ socket }: CanvasComponentProps) {
                 >{isEraser ? "Paint" : "Erase"}
                 </button>
             </div>
+            <button
+                onClick={() => handleLeave()}
+            >Leave Room</button>
         </div>
     )
 }

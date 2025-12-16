@@ -1,22 +1,25 @@
+import type { Socket } from "socket.io-client";
 import { CanvasComponent } from "../canvasComponents/CanvasComponent";
 import { ChatComponent } from "../canvasComponents/ChatComponent";
 import { HeaderComponent } from "../components/HeaderComponent";
-import { io, Socket } from "socket.io-client";
 
+type CanvasPageProps = {
+    socket: Socket;
+    joined: boolean;
+    setJoined: (value: boolean) => void;
+    roomId: string;
+    setRoomId: (value: string) => void;
+}
 
-// Initialize socket connection outside the component
-const socket: Socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
-
-export function CanvasPage() {
-
+export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: CanvasPageProps) {
     return (
         <>
             <HeaderComponent />
             <div className="flex display-row justify-center gap-5 bg-bg-light">
-                <CanvasComponent socket={socket}/>
+                <CanvasComponent socket={socket} setJoined={setJoined} joined={joined} setRoomId={setRoomId} />
 
-                <ChatComponent socket={socket} />
+                <ChatComponent socket={socket} joined={joined} roomId={roomId} />
             </div>
         </>
     );
-}
+} 
