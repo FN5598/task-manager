@@ -51,7 +51,7 @@ io.on('connection', (socket) => {
     socket.on("join-room", async (roomId: string) => {
         const room = io.sockets.adapter.rooms.get(roomId);
         const count = room?.size || 0;
-        console.log(`Room ${roomId} has ${count} client(s)`);
+        console.log(`Room ${roomId} has ${count + 1} client(s)`);
 
         socket.emit("room-joined", roomId);
 
@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
 
         console.log(`Client ${socket.id} connected to room ${roomId}`);
         socket.join(roomId);
-
+        socket.data.roomId = roomId;
 
         if (roomWords.has(roomId)) {
             socket.emit("word-to-guess", roomWords.get(roomId));
@@ -96,14 +96,20 @@ io.on('connection', (socket) => {
             io.to(roomId).emit("draw", data);
         })
 
+        socket.on("erase-canvas", () => {
+            io.to(roomId).emit("erase-canvas");
+        })
+
         socket.on("leave-room", () => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
 
+            console.log("User left room:", roomId);
             socket.leave(roomId);
-            io.to(roomId).emit("user-left", socket.id);
-
             socket.data.roomId = null;
+
+            socket.emit("left-room");
+            io.to(roomId).emit("user-left", socket.id);
         })
 
         socket.on("disconnect", () => {

@@ -68,11 +68,18 @@ export function CanvasComponent({ socket, joined, setJoined, setRoomId }: Canvas
                 ctx.stroke();
             }
         }
-        // Listen for draw events from other clients
-        socket.on("draw", handleDraw);
 
-        socket.on("user-left", () => {
-            toast.info("A user has left the room.", {
+        function handleErase() {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas?.getContext("2d");
+            if (!ctx) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function handleLeaveRoom() {
+            toast.info("You have left the room.", {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -81,19 +88,32 @@ export function CanvasComponent({ socket, joined, setJoined, setRoomId }: Canvas
                 draggable: true,
                 progress: undefined,
                 theme: `${theme}`
-            })
-        });
+            });
+            setJoined(false);
+            setRoomId("");
+            navigate(`/`);
+        }
+        
+
+        socket.on("draw", handleDraw);
+
+        socket.on("left-room", handleLeaveRoom);
+
+        socket.on("erase-canvas", handleErase);
 
         socket.on("word-to-guess", (word: string) => {
             setWordToGuess(word);
         })
-        // Cleanup on unmount
+        
+
         return () => {
             socket.off("draw", handleDraw);
+            socket.off("left-room", handleLeaveRoom);
+            socket.off("erase-canvas", handleErase);
             socket.off("word-to-guess");
             socket.off("user-left");
         };
-    }, [socket, theme, joined]);
+    }, [socket, theme, joined, navigate, setJoined, setRoomId]);
 
     function getCursorPos(e: React.MouseEvent<HTMLCanvasElement>) {
         const canvas = canvasRef.current;
@@ -160,23 +180,14 @@ export function CanvasComponent({ socket, joined, setJoined, setRoomId }: Canvas
         lastPosRef.current = null;
     }
 
-
-    function clearCanvas() {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas?.getContext("2d");
-        if (!ctx) return;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function handleLeave() {
+        if (!joined) return;
+        console.log("Leaving room", joined);
+        socket.emit("leave-room");
     }
 
-    function handleLeave() {
-        console.log("Leaving room", joined);
-        if (!joined) return;
-        socket.emit("leave-room");
-        setJoined(false);
-        setRoomId("");
-        navigate(`/`);
+    function clearCanvas() {
+        socket.emit("erase-canvas");
     }
 
     return (
