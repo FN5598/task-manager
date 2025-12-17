@@ -51,7 +51,6 @@ io.on('connection', (socket) => {
     socket.on("join-room", async (roomId: string) => {
         const room = io.sockets.adapter.rooms.get(roomId);
         const count = room?.size || 0;
-        console.log(`Room ${roomId} has ${count + 1} client(s)`);
 
         socket.emit("room-joined", roomId);
 
@@ -60,7 +59,6 @@ io.on('connection', (socket) => {
             return;
         }
 
-        console.log(`Client ${socket.id} connected to room ${roomId}`);
         socket.join(roomId);
         socket.data.roomId = roomId;
 
@@ -75,16 +73,19 @@ io.on('connection', (socket) => {
 
 
         socket.on("message", (data) => {
-            console.log("Recived message", data);
             const roomId = socket.data.roomId;
             if (!roomId) return;
             io.to(roomId).emit("message", data);
         });
 
         socket.on("get-room-info", () => {
+            const roomId = socket.data.roomId;
+            if (!roomId) {
+                socket.emit("room-info", { roomId: "", count: 0, members: [] });
+                return;
+            }
             const room = io.sockets.adapter.rooms.get(roomId);
             const count = room?.size || 0;
-
             socket.emit("room-info", {
                 roomId,
                 count,
@@ -104,7 +105,6 @@ io.on('connection', (socket) => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
 
-            console.log("User left room:", roomId);
             socket.leave(roomId);
             socket.data.roomId = null;
 

@@ -3,18 +3,15 @@ import { Socket } from "socket.io-client";
 
 type ChatComponentProps = {
     socket: Socket;
+    joined: boolean;
 }
 
-export function ChatComponent({ socket }: ChatComponentProps) {
+export function ChatComponent({ socket, joined }: ChatComponentProps) {
 
     const [messages, setMessages] = useState<string[]>([]);
     const [input, setInput] = useState("");
 
     useEffect(() => {
-        socket.on("connect", () => {
-            console.log("Connected", socket.id);
-        });
-
         socket.on("message", (msg: string) => {
             setMessages(prev => [...prev, msg]);
         });
@@ -28,16 +25,22 @@ export function ChatComponent({ socket }: ChatComponentProps) {
 
     function sendMessage(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
+
+        console.log("Sending message:", input, joined);
+        if (!joined) return;
+
         if (input) {
             socket.emit("message", input);
             setInput("");
         }
     }
     return (
-        <div className="flex flex-col text-text w-100 h-140 justify-end mt-auto mb-auto bg-bg p-2">
-            <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex flex-col text-text w-[400px] h-[600px] mt-auto mb-auto bg-bg p-2">
+            <div className="flex flex-col justify-end flex-1 overflow-y-auto p-4">
                 {messages.map((message, index) => (
-                    <p key={index}>{message}</p>
+                    <p 
+                    key={index}
+                    >{message}</p>
                 ))}
             </div>
 

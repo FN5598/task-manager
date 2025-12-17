@@ -2,7 +2,6 @@ import { ColorPickerComponent } from "../canvasComponents/ColorPickerComponent";
 import { useRef, useState, useEffect } from "react"
 import { Socket } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import transformWordToLetters from "../utils/transformWordToLetters";
 
 type CanvasComponentProps = {
@@ -28,7 +27,6 @@ const CANVAS_HEIGHT = 600;
 export function CanvasComponent({ socket, joined, setJoined, setRoomId }: CanvasComponentProps) {
 
     const navigate = useNavigate();
-    const theme = localStorage.getItem("isLightTheme");
 
     const [wordToGuess, setWordToGuess] = useState<string>('');
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -78,42 +76,22 @@ export function CanvasComponent({ socket, joined, setJoined, setRoomId }: Canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
-        function handleLeaveRoom() {
-            toast.info("You have left the room.", {
-                position: "top-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: `${theme}`
-            });
-            setJoined(false);
-            setRoomId("");
-            navigate(`/`);
-        }
-        
-
         socket.on("draw", handleDraw);
-
-        socket.on("left-room", handleLeaveRoom);
 
         socket.on("erase-canvas", handleErase);
 
         socket.on("word-to-guess", (word: string) => {
             setWordToGuess(word);
         })
-        
 
         return () => {
             socket.off("draw", handleDraw);
-            socket.off("left-room", handleLeaveRoom);
             socket.off("erase-canvas", handleErase);
             socket.off("word-to-guess");
             socket.off("user-left");
+            socket.off("room-info");
         };
-    }, [socket, theme, joined, navigate, setJoined, setRoomId]);
+    }, [socket, joined, navigate, setJoined, setRoomId]);
 
     function getCursorPos(e: React.MouseEvent<HTMLCanvasElement>) {
         const canvas = canvasRef.current;
@@ -180,18 +158,12 @@ export function CanvasComponent({ socket, joined, setJoined, setRoomId }: Canvas
         lastPosRef.current = null;
     }
 
-    function handleLeave() {
-        if (!joined) return;
-        console.log("Leaving room", joined);
-        socket.emit("leave-room");
-    }
-
     function clearCanvas() {
         socket.emit("erase-canvas");
     }
 
     return (
-        <div className="text-text flex flex-col p-10">
+        <div className="text-text flex flex-col justify-center p-10">
             <div className="flex justify-center text-2xl">
                 {wordToGuess && (transformWordToLetters(wordToGuess)?.map((char, index) => (
                     <p key={index} className="inline-block w-5 mr-1 border-b text-center">{char}</p>
@@ -205,7 +177,7 @@ export function CanvasComponent({ socket, joined, setJoined, setRoomId }: Canvas
                     height: `${CANVAS_HEIGHT}px`,
                     display: 'block'
                 }}
-                className="border border-color-bg-light bg-gray-200 cursor-crosshair w-800 h-600 mt-4.5"
+                className="border border-color-bg-light bg-gray-200 cursor-crosshair w-[800px] h-[600px] mt-4.5"
                 ref={canvasRef}
                 width={CANVAS_WIDTH}
                 height={CANVAS_HEIGHT}
@@ -253,11 +225,6 @@ export function CanvasComponent({ socket, joined, setJoined, setRoomId }: Canvas
                 >{isEraser ? "Paint" : "Erase"}
                 </button>
             </div>
-            <button
-                onClick={() => handleLeave()}
-            >Leave Room</button>
         </div>
     )
 }
-
-

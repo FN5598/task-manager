@@ -16,7 +16,6 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
     const navigate = useNavigate();
 
     useEffect(() => {
-
         socket.on("room-joined", (roomId: string) => {
             console.log("Joined room:", roomId);
             setRoomId(roomId);
@@ -40,18 +39,11 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
                 theme: `${theme}`
             });
         });
-
-        socket.on("get-room-info", ({ count, roomId }) => {
-            console.log(`Room ${roomId} has total ${count} participants`)
-        })
+        return () => {
+            socket.off("room-joined");
+            socket.off("room-full");
+        }
     }, [socket, setJoined, setRoomId, theme, navigate]);
-
-
-    function getRoomInfo(roomId: string) {
-        socket.emit("get-room-info", roomId);
-    }
-
-    getRoomInfo("room 1");
 
     return (
         <div>
