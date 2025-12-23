@@ -1,6 +1,6 @@
 import { HeaderComponent } from "../components/HeaderComponent";
 import { Socket } from "socket.io-client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
@@ -13,7 +13,9 @@ type HomePageProps = {
 
 export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePageProps) {
     const theme = localStorage.getItem("isLightTheme");
+
     const navigate = useNavigate();
+    const [username, setUsername] = useState<string>(localStorage.getItem("username") || "");
 
     useEffect(() => {
         socket.on("room-joined", (roomId: string) => {
@@ -21,6 +23,10 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
             setRoomId(roomId);
             setJoined(true);
             navigate(`/canvas/${roomId}`)
+        });
+
+        socket.on("users-update", (ids: string[]) => {
+            console.log("Users in room:", ids);
         });
 
         socket.on("room-full", (roomId: string) => {
@@ -45,6 +51,19 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
         }
     }, [socket, setJoined, setRoomId, theme, navigate]);
 
+    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const { name, value } = e.target;
+        if (name === "username") {
+            setUsername(value);
+        }
+    }
+
+    function handleSubmit() {
+        console.log("Setting username:", username);
+        localStorage.setItem("username", username);
+        socket.emit("set-username", username);
+    }
+
     return (
         <div>
             <HeaderComponent />
@@ -62,6 +81,19 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
                     onClick={() => joinRoom("room 2")}
                     className="pl-20"
                 >JOIN ROOM 2</button>
+
+                <input
+                    type="text"
+                    className="border-2 border-gray-300 p-2 rounded-lg mt-4 ml-20"
+                    placeholder="Enter username"
+                    name="username"
+                    onChange={handleChange}
+                    value={username}
+                ></input>
+                <button
+                    onClick={handleSubmit}
+                    className="ml-4 p-2 bg-blue-500 text-white rounded-lg cursor-pointer"
+                >Submit</button>
 
             </div>
         </div>

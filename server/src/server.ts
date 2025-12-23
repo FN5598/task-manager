@@ -48,19 +48,20 @@ const roomWords: Map<string, string> = new Map();
 io.on('connection', (socket) => {
     console.log("Client connected", socket.id);
 
-    socket.on("join-room", async (roomId: string) => {
+    socket.on("join-room", async (roomId: string, username: string) => {
         const room = io.sockets.adapter.rooms.get(roomId);
         const count = room?.size || 0;
+        const MAX = process.env.MAX_ROOM_CAPACITY ? parseInt(process.env.MAX_ROOM_CAPACITY) : 3;
 
-        socket.emit("room-joined", roomId);
-
-        if (count >= (process.env.MAX_ROOM_CAPACITY ? parseInt(process.env.MAX_ROOM_CAPACITY) : 3)) {
+        if (count >= MAX) {
             socket.emit("room-full");
             return;
         }
 
         socket.join(roomId);
         socket.data.roomId = roomId;
+        socket.emit("room-joined", roomId);
+        io.to(roomId).emit("users-update", Array.from(io.sockets.adapter.rooms.get(roomId) || []));
 
         if (roomWords.has(roomId)) {
             socket.emit("word-to-guess", roomWords.get(roomId));
@@ -75,7 +76,7 @@ io.on('connection', (socket) => {
         socket.on("message", (data) => {
             const roomId = socket.data.roomId;
             if (!roomId) return;
-            io.to(roomId).emit("message", data);
+            io.to(roomId).emit("message", {msg: data.msg, username: data.username});
         });
 
         socket.on("get-room-info", () => {

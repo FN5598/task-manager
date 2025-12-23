@@ -7,13 +7,15 @@ type ChatComponentProps = {
 }
 
 export function ChatComponent({ socket, joined }: ChatComponentProps) {
+    const username = localStorage.getItem("username") || "Anonymous";
 
-    const [messages, setMessages] = useState<string[]>([]);
+    const [data, setData] = useState<string[]>([]);
     const [input, setInput] = useState("");
 
     useEffect(() => {
-        socket.on("message", (msg: string) => {
-            setMessages(prev => [...prev, msg]);
+        socket.on("message", ({msg, username}) => {
+            console.log("Received message:", msg, username);
+            setData((prevData) => [...prevData, `${username}: ${msg}`]);
         });
 
         // Cleanup listeners on component unmount
@@ -29,15 +31,15 @@ export function ChatComponent({ socket, joined }: ChatComponentProps) {
         console.log("Sending message:", input, joined);
         if (!joined) return;
 
-        if (input) {
-            socket.emit("message", input);
+        if (input || username) {
+            socket.emit("message", {msg: input, username});
             setInput("");
         }
     }
     return (
         <div className="flex flex-col text-text w-[400px] h-[600px] mt-auto mb-auto bg-bg p-2">
             <div className="flex flex-col justify-end flex-1 overflow-y-auto p-4">
-                {messages.map((message, index) => (
+                {data.map((message, index) => (
                     <p 
                     key={index}
                     >{message}</p>
