@@ -6,7 +6,7 @@ import { Server } from "socket.io";
 import http from 'http';
 import cookieParser from "cookie-parser";
 import { setupSwagger } from "./config/swagger";
-import fetchRandomWord from "./utils/fetchWords";
+import { fetchRandomWord } from "./utils/fetchRandomWord";
 
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -61,65 +61,87 @@ io.on('connection', (socket) => {
         socket.join(roomId);
         socket.data.roomId = roomId;
         socket.emit("room-joined", roomId);
-        io.to(roomId).emit("users-update", Array.from(io.sockets.adapter.rooms.get(roomId) || []));
-
-        if (roomWords.has(roomId)) {
-            socket.emit("word-to-guess", roomWords.get(roomId));
+        if (count === 0) {
+            const wordObj = await fetchRandomWord();
+            const wordToGuess = wordObj?.word;
+            if (wordToGuess) {
+                roomWords.set(roomId, wordToGuess);
+                console.log("New word created:", wordToGuess);
+            }
         }
 
-        const [word] = await fetchRandomWord(1);
-        if (word) roomWords.set(roomId, word);
+        // Create word if room doesn't have one yet
+        if (!roomWords.has(roomId)) {
+            const wordObj = await fetchRandomWord();
+            const wordToGuess = wordObj?.word;
+            if (wordToGuess) {
+                roomWords.set(roomId, wordToGuess);
+                console.log("New word created:", wordToGuess);
+            }
+        }
+    });
 
-        io.to(roomId).emit("word-to-guess", word);
+    socket.on("get-word", () => {
+        const roomId = socket.data.roomId;
+        if (!roomId) {
+            socket.emit("word-to-guess", "");
+            return;
+        }
+        const word = roomWords.get(roomId);
+        console.log("Sending word to client:", word);
+        socket.emit("word-to-guess", word || "");
+    });
 
+    socket.on("message", (data) => {
+        const roomId = socket.data.roomId;
+        if (!roomId) return;
+        io.to(roomId).emit("message", { msg: data.msg, username: data.username });
+    });
 
-        socket.on("message", (data) => {
-            const roomId = socket.data.roomId;
-            if (!roomId) return;
-            io.to(roomId).emit("message", {msg: data.msg, username: data.username});
+    socket.on("get-room-info", () => {
+        const roomId = socket.data.roomId;
+        if (!roomId) {
+            socket.emit("room-info", { roomId: "", count: 0, members: [] });
+            return;
+        }
+        const room = io.sockets.adapter.rooms.get(roomId);
+        const count = room?.size || 0;
+        io.to(roomId).emit("room-info", {
+            roomId,
+            count,
+            members: room ? Array.from(room) : []
         });
+    });
 
-        socket.on("get-room-info", () => {
-            const roomId = socket.data.roomId;
-            if (!roomId) {
-                socket.emit("room-info", { roomId: "", count: 0, members: [] });
-                return;
-            }
-            const room = io.sockets.adapter.rooms.get(roomId);
-            const count = room?.size || 0;
-            socket.emit("room-info", {
-                roomId,
-                count,
-                members: room ? Array.from(room) : []
-            });
-        })
+    socket.on("draw", (data) => {
+        const roomId = socket.data.roomId;
+        if (!roomId) return;
+        io.to(roomId).emit("draw", data);
+    });
 
-        socket.on("draw", (data) => {
-            io.to(roomId).emit("draw", data);
-        })
+    socket.on("erase-canvas", () => {
+        const roomId = socket.data.roomId;
+        if (!roomId) return;
+        io.to(roomId).emit("erase-canvas");
+    });
 
-        socket.on("erase-canvas", () => {
-            io.to(roomId).emit("erase-canvas");
-        })
+    socket.on("leave-room", () => {
+        const roomId = socket.data.roomId;
+        if (!roomId) return;
 
-        socket.on("leave-room", () => {
-            const roomId = socket.data.roomId;
-            if (!roomId) return;
+        socket.leave(roomId);
+        socket.data.roomId = null;
 
-            socket.leave(roomId);
-            socket.data.roomId = null;
+        socket.emit("left-room");
+        io.to(roomId).emit("user-left", socket.id);
+    });
 
-            socket.emit("left-room");
+    socket.on("disconnect", () => {
+        const roomId = socket.data.roomId;
+        if (roomId) {
             io.to(roomId).emit("user-left", socket.id);
-        })
-
-        socket.on("disconnect", () => {
-            const roomId = socket.data.roomId;
-            if (roomId) {
-                io.to(roomId).emit("user-left", socket.id);
-            }
-        })
-    })
+        }
+    });
 })
 
 server.listen(process.env.PORT || 5000, () => {

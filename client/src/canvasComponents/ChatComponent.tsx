@@ -13,26 +13,25 @@ export function ChatComponent({ socket, joined }: ChatComponentProps) {
     const [input, setInput] = useState("");
 
     useEffect(() => {
-        socket.on("message", ({msg, username}) => {
-            console.log("Received message:", msg, username);
+        function handleMessage({ msg, username }: { msg: string, username: string }) {
             setData((prevData) => [...prevData, `${username}: ${msg}`]);
-        });
+        }
+
+        socket.on("message", handleMessage);
 
         // Cleanup listeners on component unmount
         return () => {
             socket.off("connect");
-            socket.off("message");
+            socket.off("message", handleMessage);
         };
-    }, [socket]);
+    }, [socket, setData]);
 
     function sendMessage(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-
-        console.log("Sending message:", input, joined);
         if (!joined) return;
 
         if (input || username) {
-            socket.emit("message", {msg: input, username});
+            socket.emit("message", { msg: input, username });
             setInput("");
         }
     }
@@ -40,8 +39,8 @@ export function ChatComponent({ socket, joined }: ChatComponentProps) {
         <div className="flex flex-col text-text w-[400px] h-[600px] mt-auto mb-auto bg-bg p-2">
             <div className="flex flex-col justify-end flex-1 overflow-y-auto p-4">
                 {data.map((message, index) => (
-                    <p 
-                    key={index}
+                    <p
+                        key={index}
                     >{message}</p>
                 ))}
             </div>

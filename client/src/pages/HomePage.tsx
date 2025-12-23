@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
+
 type HomePageProps = {
     socket: Socket;
     setJoined: (value: boolean) => void;
@@ -23,10 +24,6 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
             setRoomId(roomId);
             setJoined(true);
             navigate(`/canvas/${roomId}`)
-        });
-
-        socket.on("users-update", (ids: string[]) => {
-            console.log("Users in room:", ids);
         });
 
         socket.on("room-full", (roomId: string) => {
@@ -59,7 +56,6 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
     }
 
     function handleSubmit() {
-        console.log("Setting username:", username);
         localStorage.setItem("username", username);
         socket.emit("set-username", username);
     }

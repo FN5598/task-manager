@@ -12,6 +12,8 @@ const socket: Socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000
 
 function App() {
 
+  const username = localStorage.getItem("username");
+
   const [joined, setJoined] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string>("");
 
@@ -20,6 +22,7 @@ function App() {
       socket.connect();
     }
     socket.emit("join-room", roomId);
+    socket.emit("message", { msg: `has joined the game`, username });
   }
 
   useEffect(() => {

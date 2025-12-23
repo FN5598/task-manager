@@ -1,14 +1,12 @@
 import { ColorPickerComponent } from "../canvasComponents/ColorPickerComponent";
 import { useRef, useState, useEffect } from "react"
 import { Socket } from "socket.io-client";
-import { useNavigate } from "react-router-dom";
 import transformWordToLetters from "../utils/transformWordToLetters";
 
 type CanvasComponentProps = {
     socket: Socket;
     joined: boolean;
-    setJoined: (value: boolean) => void;
-    setRoomId: (value: string) => void;
+    roomId: string;
 }
 
 interface DrawData {
@@ -24,9 +22,7 @@ interface DrawData {
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 
-export function CanvasComponent({ socket, joined, setJoined, setRoomId }: CanvasComponentProps) {
-
-    const navigate = useNavigate();
+export function CanvasComponent({ socket, roomId }: CanvasComponentProps) {
 
     const [wordToGuess, setWordToGuess] = useState<string>('');
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -38,8 +34,8 @@ export function CanvasComponent({ socket, joined, setJoined, setRoomId }: Canvas
     const [colorPicker, setColorPicker] = useState(false);
 
     useEffect(() => {
+
         function handleDraw(data: DrawData) {
-            if (!joined) return;
 
             const canvas = canvasRef.current;
             const ctx = canvas?.getContext("2d");
@@ -76,22 +72,43 @@ export function CanvasComponent({ socket, joined, setJoined, setRoomId }: Canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
-        socket.on("draw", handleDraw);
-
-        socket.on("erase-canvas", handleErase);
-
-        socket.on("word-to-guess", (word: string) => {
+        function handleWord(word: string) {
+            console.log("Word received:", word);
             setWordToGuess(word);
-        })
+        }
+
+        socket.on("draw", handleDraw);
+        socket.on("erase-canvas", handleErase);
+        socket.on("word-to-guess", handleWord);
 
         return () => {
             socket.off("draw", handleDraw);
             socket.off("erase-canvas", handleErase);
-            socket.off("word-to-guess");
+            socket.off("word-to-guess", handleWord);
             socket.off("user-left");
             socket.off("room-info");
         };
-    }, [socket, joined, navigate, setJoined, setRoomId]);
+    }, [socket]);
+
+    // Request word when component mounts or room is joined
+    useEffect(() => {
+        // If already in a room, request word immediately
+        if (roomId) {
+            console.log("Already in room:", roomId);
+            socket.emit("get-word");
+        }
+
+        function handleRoomJoined(roomId: string) {
+            console.log("Room joined:", roomId);
+            socket.emit("get-word");
+        }
+
+        socket.on("room-joined", handleRoomJoined);
+
+        return () => {
+            socket.off("room-joined", handleRoomJoined);
+        };
+    }, [socket, roomId]);
 
     function getCursorPos(e: React.MouseEvent<HTMLCanvasElement>) {
         const canvas = canvasRef.current;

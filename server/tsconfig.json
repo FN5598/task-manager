@@ -4,8 +4,14 @@
     // File Layout
     "rootDir": "./src",
     "outDir": "./dist",
-    "typeRoots": ["./node_modules/@types", "./src/types"],
-    "types": ["node", "express"],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
+    "types": [
+      "node",
+      "express"
+    ],
     // See also https://aka.ms/tsconfig/module
     "module": "commonjs",
     "target": "es2020",
@@ -13,7 +19,6 @@
     // "lib": ["esnext"],
     // "types": ["node"],
     // and npm install -D @types/node
-
     // Other Outputs
     "sourceMap": true,
     "declaration": true,
@@ -40,6 +45,7 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/types/*.d.ts"
+    "src/types/*.d.ts",
+    "src/utils/*.ts"
   ]
 }

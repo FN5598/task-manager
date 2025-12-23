@@ -19,9 +19,11 @@ type RoomInfo = {
     members: string[];
 }
 
-export function CanvasPage({ socket, setJoined, joined, setRoomId }: CanvasPageProps) {
+export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: CanvasPageProps) {
     const navigate = useNavigate();
+
     const theme = localStorage.getItem("isLightTheme");
+    const username = localStorage.getItem("username");
 
     const [roomInfo, setRoomInfo] = useState<RoomInfo>({
         count: "Loading ...",
@@ -57,15 +59,9 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId }: CanvasPageP
             setRoomId("");
             navigate(`/`);
         }
-
         socket.on("left-room", handleLeaveRoom);
 
         socket.on("room-info", handleRoomInfo);
-
-        setTimeout(() => {
-            socket.emit("get-room-info");
-        }, 500);
-
         return () => {
             socket.off("room-info", handleRoomInfo);
             socket.off("left-room", handleLeaveRoom);
@@ -74,9 +70,15 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId }: CanvasPageP
 
     function handleLeave() {
         if (!joined) return;
-        console.log("Leaving room", joined);
+        socket.emit("message", { msg: `has left the game`, username });
         socket.emit("leave-room");
     }
+
+    useEffect(() => {
+        socket.emit("make-word");
+
+        socket.emit("get-room-info");
+    }, [socket]);
 
     return (
         <div className="flex flex-row gap-5 bg-bg-light h-screen justify-center">
@@ -91,7 +93,7 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId }: CanvasPageP
                     <p>Members: {roomInfo?.members.length}</p>
                 </div>
             </div>
-            <CanvasComponent socket={socket} setJoined={setJoined} joined={joined} setRoomId={setRoomId} />
+            <CanvasComponent socket={socket} joined={joined} roomId={roomId} />
             <ChatComponent socket={socket} joined={joined} />
         </div>
     );
