@@ -191,11 +191,11 @@ export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, r
             <div className="flex justify-center text-2xl">
                 {wordToGuess && (transformWordToLetters(wordToGuess)?.map((char, index) => (
                     canDraw ?
-                        <div key={index} className="inline-block w-5 mr-1 border-b border-b-blue-100 text-center">
+                        <div key={index} className={`inline-block w-5 mr-1 ${char !== " " ? `border-b border-b-blue-100` : `border-0`} text-center`}>
                             {char}
                         </div>
                         :
-                        <div key={index} className="inline-block w-5 mr-1 border-b text-center">
+                        <div key={index} className={`inline-block w-5 mr-1 ${char !== " " ? `border-b border-b-blue-100` : `border-0`} text-center`}>
                             <p className={`${isGuessed ?  `text-white` : `text-transparent select-none`}`}>{char}</p>
                         </div>
                 )))
