@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Socket } from "socket.io-client";
 
 type ChatComponentProps = {
     socket: Socket;
     joined: boolean;
+    wordToGuess: string;
+    setIsGuessed: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function ChatComponent({ socket, joined }: ChatComponentProps) {
+export function ChatComponent({ socket, joined, wordToGuess, setIsGuessed }: ChatComponentProps) {
     const username = localStorage.getItem("username") || "Anonymous";
 
     const [data, setData] = useState<string[]>([]);
@@ -26,13 +28,24 @@ export function ChatComponent({ socket, joined }: ChatComponentProps) {
         };
     }, [socket, setData]);
 
-    function sendMessage(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault();
+    function sendMessage() {
         if (!joined) return;
 
         if (input || username) {
-            socket.emit("message", { msg: input, username });
+            if (input === wordToGuess) {
+                socket.emit("message", { msg: `has guessed the word`, username });
+                setIsGuessed(true);
+            } else {
+                socket.emit("message", { msg: input, username });
+            }
             setInput("");
+        }
+    }
+
+    function handleSend(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
         }
     }
     return (
@@ -45,20 +58,20 @@ export function ChatComponent({ socket, joined }: ChatComponentProps) {
                 ))}
             </div>
 
-            <form
-                className="bg-bg-light p-2 rounded-2xl overflow-x-clip relative"
-                onSubmit={sendMessage}>
+            <div
+                className="bg-bg-light p-2 rounded-2xl overflow-x-clip relative">
                 <textarea
                     className="w-full pt-1 pr-15 rounded resize-none overflow-hidden"
                     rows={1}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleSend}
                     placeholder="Type your message"
                 />
                 <button
                     className="absolute top-3 right-3 cursor-pointer"
                     type="submit">Submit</button>
-            </form>
+            </div>
         </div>
     )
 }

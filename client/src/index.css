@@ -27,6 +27,11 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+textarea,
+input {
+    outline: none;
+}
+
 :root,
 .dark {
     --text: hsl(300 0% 95%);

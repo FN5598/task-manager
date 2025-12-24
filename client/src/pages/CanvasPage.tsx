@@ -13,22 +13,22 @@ type CanvasPageProps = {
     setRoomId: (value: string) => void;
 }
 
-type RoomInfo = {
-    count: number | "Loading ...";
-    roomId: string | "Loading ...";
-    members: string[];
+export type RoomInfo = {
+    roomId: number | "Loading ...";
+    members?: string[]
+    currentDrawerId?: number;
 }
 
 export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: CanvasPageProps) {
     const navigate = useNavigate();
+    const [wordToGuess, setWordToGuess] = useState<string>('');
+    const [isGuessed, setIsGuessed] = useState(false);
 
     const theme = localStorage.getItem("isLightTheme");
     const username = localStorage.getItem("username");
 
     const [roomInfo, setRoomInfo] = useState<RoomInfo>({
-        count: "Loading ...",
-        roomId: "Loading ...",
-        members: []
+        roomId: "Loading ..."
     });
 
     useEffect(() => {
@@ -39,9 +39,9 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
             socket.emit("leave-room");
         }
 
-        const handleRoomInfo = ({ count, roomId, members }: RoomInfo) => {
-            console.log("Received room-info:", { count, roomId, members });
-            setRoomInfo({ count, roomId, members });
+        const handleRoomInfo = ({ roomId, members, currentDrawerId }: RoomInfo) => {
+            console.log("Received room-info:", { roomId, members, currentDrawerId });
+            setRoomInfo({ roomId, members, currentDrawerId });
         };
 
         function handleLeaveRoom() {
@@ -90,11 +90,24 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
                     <p>Room ID: {roomInfo?.roomId}</p>
                 </div>
                 <div className="text-text bg-bg p-2 rounded">
-                    <p>Members: {roomInfo?.members.length}</p>
+                    <p>Members: {roomInfo?.members?.length}</p>
                 </div>
             </div>
-            <CanvasComponent socket={socket} joined={joined} roomId={roomId} />
-            <ChatComponent socket={socket} joined={joined} />
+            <CanvasComponent
+                socket={socket}
+                joined={joined}
+                roomId={roomId}
+                setWordToGuess={setWordToGuess}
+                wordToGuess={wordToGuess}
+                roomInfo={roomInfo}
+                isGuessed={isGuessed} />
+
+            <ChatComponent
+                socket={socket}
+                joined={joined}
+                wordToGuess={wordToGuess}
+                setIsGuessed={setIsGuessed}
+            />
         </div>
     );
 } 

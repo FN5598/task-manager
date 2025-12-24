@@ -7,6 +7,7 @@ import http from 'http';
 import cookieParser from "cookie-parser";
 import { setupSwagger } from "./config/swagger";
 import { fetchRandomWord } from "./utils/fetchRandomWord";
+import { RoomState } from "./types/RoomState";
 
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -44,13 +45,14 @@ const io = new Server(server, {
 });
 
 const roomWords: Map<string, string> = new Map();
+const rooms = new Map<string, RoomState>();
 
 io.on('connection', (socket) => {
     console.log("Client connected", socket.id);
 
     socket.on("join-room", async (roomId: string, username: string) => {
-        const room = io.sockets.adapter.rooms.get(roomId);
-        const count = room?.size || 0;
+        socket.data.username = username;
+        const count = io.sockets.adapter.rooms.get(roomId)?.size || 0;
         const MAX = process.env.MAX_ROOM_CAPACITY ? parseInt(process.env.MAX_ROOM_CAPACITY) : 3;
 
         if (count >= MAX) {
@@ -61,17 +63,18 @@ io.on('connection', (socket) => {
         socket.join(roomId);
         socket.data.roomId = roomId;
         socket.emit("room-joined", roomId);
-        if (count === 0) {
-            const wordObj = await fetchRandomWord();
-            const wordToGuess = wordObj?.word;
-            if (wordToGuess) {
-                roomWords.set(roomId, wordToGuess);
-                console.log("New word created:", wordToGuess);
-            }
+
+        if (!rooms.has(roomId)) {
+            rooms.set(roomId, {
+                members: [],
+                currentDrawerIndex: 0
+            });
         }
 
-        // Create word if room doesn't have one yet
-        if (!roomWords.has(roomId)) {
+        const room = rooms.get(roomId)!;
+        room.members.push(socket.id);
+
+        if (!roomWords.has(roomId) || count === 0) {
             const wordObj = await fetchRandomWord();
             const wordToGuess = wordObj?.word;
             if (wordToGuess) {
@@ -100,22 +103,39 @@ io.on('connection', (socket) => {
 
     socket.on("get-room-info", () => {
         const roomId = socket.data.roomId;
-        if (!roomId) {
-            socket.emit("room-info", { roomId: "", count: 0, members: [] });
-            return;
-        }
-        const room = io.sockets.adapter.rooms.get(roomId);
-        const count = room?.size || 0;
+        const room = rooms.get(roomId)
+        if (!room) return;
+
+        const members = room.members.map(id => {
+            const user = io.sockets.sockets.get(id);
+            return {
+                id,
+                username: user?.data.username
+            }
+        });
+
+        const currentDrawerId = room.members[room.currentDrawerIndex];
         io.to(roomId).emit("room-info", {
             roomId,
-            count,
-            members: room ? Array.from(room) : []
-        });
+            members,
+            currentDrawerId
+        })
+
     });
 
     socket.on("draw", (data) => {
         const roomId = socket.data.roomId;
         if (!roomId) return;
+
+        const room = rooms.get(roomId);
+        if (!room) return;
+
+        const currentDrawerId = room.members[room.currentDrawerIndex];
+
+        if (socket.id !== currentDrawerId) {
+            return;
+        }
+
         io.to(roomId).emit("draw", data);
     });
 
@@ -129,8 +149,16 @@ io.on('connection', (socket) => {
         const roomId = socket.data.roomId;
         if (!roomId) return;
 
+        const room = rooms.get(roomId);
+        if(!room) return;
+
         socket.leave(roomId);
         socket.data.roomId = null;
+        room.members = room.members.filter(id => id !== socket.id);
+
+        if(room.currentDrawerIndex >= room.members.length) {
+            room.currentDrawerIndex = 0;
+        }
 
         socket.emit("left-room");
         io.to(roomId).emit("user-left", socket.id);

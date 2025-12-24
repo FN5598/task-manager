@@ -2,11 +2,16 @@ import { ColorPickerComponent } from "../canvasComponents/ColorPickerComponent";
 import { useRef, useState, useEffect } from "react"
 import { Socket } from "socket.io-client";
 import transformWordToLetters from "../utils/transformWordToLetters";
+import { RoomInfo } from "../pages/CanvasPage";
 
 type CanvasComponentProps = {
     socket: Socket;
     joined: boolean;
     roomId: string;
+    setWordToGuess: React.Dispatch<React.SetStateAction<string>>;
+    wordToGuess: string;
+    roomInfo: RoomInfo
+    isGuessed: boolean;
 }
 
 interface DrawData {
@@ -22,9 +27,8 @@ interface DrawData {
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 
-export function CanvasComponent({ socket, roomId }: CanvasComponentProps) {
+export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, roomInfo, isGuessed }: CanvasComponentProps) {
 
-    const [wordToGuess, setWordToGuess] = useState<string>('');
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [lineWidth, setLineWidth] = useState(1);
     const [drawing, setDrawing] = useState(false);
@@ -32,6 +36,8 @@ export function CanvasComponent({ socket, roomId }: CanvasComponentProps) {
     const lastPosRef = useRef<{ x: number, y: number } | null>(null);
     const [isEraser, setIsEraser] = useState(false);
     const [colorPicker, setColorPicker] = useState(false);
+
+    const canDraw = socket.id === roomInfo.currentDrawerId
 
     useEffect(() => {
 
@@ -88,7 +94,7 @@ export function CanvasComponent({ socket, roomId }: CanvasComponentProps) {
             socket.off("user-left");
             socket.off("room-info");
         };
-    }, [socket]);
+    }, [socket, setWordToGuess]);
 
     // Request word when component mounts or room is joined
     useEffect(() => {
@@ -124,6 +130,7 @@ export function CanvasComponent({ socket, roomId }: CanvasComponentProps) {
 
     function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
         if (!drawing) return;
+        if (!canDraw) return;
 
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -183,7 +190,14 @@ export function CanvasComponent({ socket, roomId }: CanvasComponentProps) {
         <div className="text-text flex flex-col justify-center p-10">
             <div className="flex justify-center text-2xl">
                 {wordToGuess && (transformWordToLetters(wordToGuess)?.map((char, index) => (
-                    <p key={index} className="inline-block w-5 mr-1 border-b text-center">{char}</p>
+                    canDraw ?
+                        <div key={index} className="inline-block w-5 mr-1 border-b border-b-blue-100 text-center">
+                            {char}
+                        </div>
+                        :
+                        <div key={index} className="inline-block w-5 mr-1 border-b text-center">
+                            <p className={`${isGuessed ?  `text-white` : `text-transparent select-none`}`}>{char}</p>
+                        </div>
                 )))
                 }
             </div>
@@ -201,6 +215,7 @@ export function CanvasComponent({ socket, roomId }: CanvasComponentProps) {
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}
                 onMouseMove={handleMouseMove}
+                aria-disabled={!canDraw}
             ></canvas>
 
             <div className="flex gap-4 items-center mb-4">
@@ -242,6 +257,6 @@ export function CanvasComponent({ socket, roomId }: CanvasComponentProps) {
                 >{isEraser ? "Paint" : "Erase"}
                 </button>
             </div>
-        </div>
+        </div >
     )
 }
