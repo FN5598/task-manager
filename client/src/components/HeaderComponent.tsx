@@ -17,7 +17,7 @@ export function HeaderComponent() {
                 <NavLink to='/login'>Login</NavLink>
             </div>
             <button
-                className="cursor-pointer border-border-color border p-2 rounded-md bg-bg-light w-23 text-text"
+                className="cursor-pointer border-border-color border p-2 rounded-md bg-bg w-23 text-text"
                 onClick={changeTheme}
             >
                 Switch Theme

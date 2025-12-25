@@ -39,7 +39,7 @@ input {
 
     --bg-dark: hsl(336 0% 1%);
     --bg: hsl(300 0% 4%);
-    --bg-light: hsl(0 0% 9%);
+    --bg-light: hsl(300 0% 100%);
 
     --highlight: hsl(330 0% 39%);
 
@@ -49,8 +49,8 @@ input {
     --primary: hsl(220 78% 76%);
     --secondary: hsl(40 53% 60%);
 
-    --danger: hsl(9 26% 64%);
-    --warning: hsl(52 19% 57%);
+    --danger: rgb(205,14,25);
+    --warning: rgb(255,14,25);
     --success: hsl(146 17% 59%);
     --info: hsl(217 28% 65%);
 }

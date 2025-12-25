@@ -195,7 +195,7 @@ export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, i
                         </div>
                         :
                         <div key={index} className={`inline-block w-5 mr-1 ${char !== " " ? `border-b border-b-blue-100` : `border-0`} text-center`}>
-                            <p className={`${isGuessed ?  `text-white` : `text-transparent select-none`}`}>{char}</p>
+                            <p className={`${isGuessed ? `text-white` : `text-transparent select-none`}`}>{char}</p>
                         </div>
                 )))
                 }
@@ -207,7 +207,7 @@ export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, i
                     height: `${CANVAS_HEIGHT}px`,
                     display: 'block'
                 }}
-                className="border border-color-bg-light bg-gray-200 cursor-crosshair w-[800px] h-[600px] mt-4.5"
+                className="border border-color-bg-light bg-bg-light cursor-crosshair w-[800px] h-[600px] mt-4.5"
                 ref={canvasRef}
                 width={CANVAS_WIDTH}
                 height={CANVAS_HEIGHT}
@@ -217,45 +217,47 @@ export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, i
                 aria-disabled={!canDraw}
             ></canvas>
 
-            <div className="flex gap-4 items-center mb-4">
-                <label htmlFor="lineWidth">Line Width:</label>
-                <input
-                    id="lineWidth"
-                    type="range"
-                    min="1"
-                    max="20"
-                    value={lineWidth}
-                    onChange={(e) => setLineWidth(Number(e.target.value))}
-                    className="cursor-pointer"
-                />
-                <span>{lineWidth}px</span>
+            {canDraw && (
+                <div className="flex gap-4 items-center mb-4">
+                    <label htmlFor="lineWidth">Line Width:</label>
+                    <input
+                        id="lineWidth"
+                        type="range"
+                        min="1"
+                        max="20"
+                        value={lineWidth}
+                        onChange={(e) => setLineWidth(Number(e.target.value))}
+                        className="cursor-pointer"
+                    />
+                    <span>{lineWidth}px</span>
 
-                <label htmlFor="colorPicker">Color:</label>
-                <div
-                    onMouseEnter={() => setTimeout(() => setColorPicker(true), 100)}
-                    className="w-6 h-6 cursor-pointer"
-                    onClick={() => setColorPicker(prev => !prev)}
-                    style={{ backgroundColor: color || "white" }}
-                    id="colorPicker"></div>
-                <div className="relative">
+                    <label htmlFor="colorPicker">Color:</label>
                     <div
-                        className={colorPicker ? "flex absolute -left-6 -top-55" : "hidden"}
-                        onMouseLeave={() => setTimeout(() => setColorPicker(false), 100)}>
-                        <ColorPickerComponent color={color} setColor={setColor} />
+                        onMouseEnter={() => setTimeout(() => setColorPicker(true), 100)}
+                        className="w-6 h-6 cursor-pointer"
+                        onClick={() => setColorPicker(prev => !prev)}
+                        style={{ backgroundColor: color || "white" }}
+                        id="colorPicker"></div>
+                    <div className="relative">
+                        <div
+                            className={colorPicker ? "flex absolute -left-6 -top-55" : "hidden"}
+                            onMouseLeave={() => setTimeout(() => setColorPicker(false), 100)}>
+                            <ColorPickerComponent color={color} setColor={setColor} />
+                        </div>
                     </div>
+
+                    <button
+                        className="border border-border-color p-1 rounded-lg mt-2 cursor-pointer bg-bg text-text"
+                        onClick={clearCanvas}
+                    >Clear canvas</button>
+
+                    <button
+                        className="border border-border-color p-1 rounded-lg mt-2 cursor-pointer bg-bg text-text"
+                        onClick={() => setIsEraser(prev => !prev)}
+                    >{isEraser ? "Paint" : "Erase"}
+                    </button>
                 </div>
-
-                <button
-                    className="border border-border-color p-1 rounded-lg mt-2 cursor-pointer"
-                    onClick={clearCanvas}
-                >Clear canvas</button>
-
-                <button
-                    className="border border-border-color p-1 rounded-lg mt-2 cursor-pointer"
-                    onClick={() => setIsEraser(prev => !prev)}
-                >{isEraser ? "Paint" : "Erase"}
-                </button>
-            </div>
+            )}
         </div >
     )
 }

@@ -72,7 +72,7 @@ export function LoginPage() {
         <form
             onSubmit={handleSubmit}
             className="flex justify-center items-center h-screen bg-bg-dark">
-            <div className="bg-bg-light text-text p-5 rounded-2xl w-xs">
+            <div className="bg-bg text-text p-5 rounded-2xl w-xs">
                 <h1 className="text-4xl text-center pb-5">Login</h1>
                 <div className="mb-2">
                     <p className="text-text-muted text-xs pb-1 pl-1">Email</p>

@@ -82,20 +82,21 @@ export function ChatComponent({ socket, joined, wordToGuess, setIsGuessed, setCa
         }
     }
     return (
-        <div className="flex flex-col text-text w-[400px] h-[600px] mt-auto mb-auto bg-bg p-2">
+        <div className="flex flex-col text-text w-[400px] h-[500px] bg-bg-light p-2">
             <div className="flex flex-col justify-end flex-1 overflow-y-auto p-4">
                 {data.map((message, index) => (
                     <p
                         key={index}
+                        className="text-bg font-medium"
                     >{message}</p>
                 ))}
             </div>
 
             <div
-                className="bg-bg-light p-2 rounded-2xl overflow-x-clip relative">
+                className="bg-bg p-2 rounded-2xl overflow-x-clip relative">
                 <textarea
                     disabled={!canType}
-                    className="w-full pt-1 pr-15 rounded resize-none overflow-hidden"
+                    className="w-full pt-1 pr-15 rounded resize-none overflow-hidden text-text"
                     rows={1}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}

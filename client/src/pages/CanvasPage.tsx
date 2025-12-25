@@ -16,7 +16,7 @@ type CanvasPageProps = {
 export type RoomInfo = {
     roomId: number | "Loading ...";
     members?: { id: string, username: string }[]
-    currentDrawerId?: number;
+    currentDrawerId?: string;
 }
 
 export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: CanvasPageProps) {
@@ -68,7 +68,7 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
             navigate(`/`);
         }
 
-        if(!joined) {
+        if (!joined) {
             navigate("/");
             return;
         }
@@ -95,25 +95,19 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
     }
 
     return (
-        <div className="flex flex-row gap-5 bg-bg-light h-screen justify-center">
-            <div className="absolute top-2 left-2 flex flex-row gap-2">
-                <button
-                    onClick={() => handleLeave()}
-                    className="text-text bg-danger p-2 rounded cursor-pointer">Leave room</button>
-                <div className="text-text bg-bg p-2 rounded">
-                    <p>Room ID: {roomInfo?.roomId}</p>
+        <div className="flex flex-row gap-5 bg-[#949494] h-screen justify-center">
+            <div className="flex text-center flex-col w-[350px] h-[600px] mt-auto mb-auto">
+                <div className="flex justify-center">
+                    <h1 className="text-text text-4xl mb-2 bg-bg p-3 rounded">Players</h1>
                 </div>
-                <div className="text-text bg-bg p-2 rounded">
-                    <p>Members: {roomInfo?.members?.length}</p>
+                <div className="flex-1 items-start justify-center flex-col bg-bg-light p-2 rounded-lg">
+                    {roomInfo?.members?.map((member) =>
+                        <p
+                            className={`text-3xl ${member.id === roomInfo?.currentDrawerId ? `font-bold text-text-muted` : `text-text-muted`}`}
+                            key={member.id}
+                        >{member.username}</p>
+                    )}
                 </div>
-            </div>
-            <div className="flex justify-center items-center flex-col">
-                {roomInfo?.members?.map((member) =>
-                    <p
-                        className="text-text-muted"
-                        key={member.id}
-                    >{member.username}</p>
-                )}
             </div>
 
             <CanvasComponent
@@ -127,14 +121,27 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
                 canDraw={canDraw}
             />
 
-            <ChatComponent
-                socket={socket}
-                joined={joined}
-                wordToGuess={wordToGuess}
-                setIsGuessed={setIsGuessed}
-                setCanDraw={setCanDraw}
-                roomInfo={roomInfo}
-            />
+            <div className="flex gap-2 flex-col justify-center">
+                <div className="flex flex-row gap-2 justify-center">
+                    <button
+                        onClick={() => handleLeave()}
+                        className="text-text bg-warning hover:bg-danger transition-all p-2 rounded cursor-pointer">Leave room</button>
+                    <div className="text-text bg-bg p-2 rounded">
+                        <p>Room ID: {roomInfo?.roomId}</p>
+                    </div>
+                    <div className="text-text bg-bg p-2 rounded">
+                        <p>Members: {roomInfo?.members?.length}</p>
+                    </div>
+                </div>
+                <ChatComponent
+                    socket={socket}
+                    joined={joined}
+                    wordToGuess={wordToGuess}
+                    setIsGuessed={setIsGuessed}
+                    setCanDraw={setCanDraw}
+                    roomInfo={roomInfo}
+                />
+            </div>
         </div>
     );
 } 
