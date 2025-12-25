@@ -21,7 +21,7 @@ function App() {
     if (!socket.connected) {
       socket.connect();
     }
-    socket.emit("join-room", roomId);
+    socket.emit("join-room", roomId, username);
     socket.emit("message", { msg: `has joined the game`, username });
   }
 

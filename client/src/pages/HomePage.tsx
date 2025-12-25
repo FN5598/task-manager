@@ -59,7 +59,6 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
         localStorage.setItem("username", username);
         socket.emit("set-username", username);
     }
-
     return (
         <div>
             <HeaderComponent />
@@ -90,7 +89,6 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
                     onClick={handleSubmit}
                     className="ml-4 p-2 bg-blue-500 text-white rounded-lg cursor-pointer"
                 >Submit</button>
-
             </div>
         </div>
     );

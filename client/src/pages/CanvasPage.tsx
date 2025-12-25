@@ -15,7 +15,7 @@ type CanvasPageProps = {
 
 export type RoomInfo = {
     roomId: number | "Loading ...";
-    members?: string[]
+    members?: { id: string, username: string }[]
     currentDrawerId?: number;
 }
 
@@ -23,6 +23,7 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
     const navigate = useNavigate();
     const [wordToGuess, setWordToGuess] = useState<string>('');
     const [isGuessed, setIsGuessed] = useState(false);
+    const [canDraw, setCanDraw] = useState<boolean>(false)
 
     const theme = localStorage.getItem("isLightTheme");
     const username = localStorage.getItem("username");
@@ -32,13 +33,20 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
     });
 
     useEffect(() => {
-        if (!joined) {
-            navigate(`/`, { replace: true });
-            setJoined(false);
-            setRoomId("");
-            socket.emit("leave-room");
-        }
+        const handleBeforeUnload = () => {
+            if (joined) {
+                socket.emit("leave-room");
+            }
+        };
 
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, [socket, joined]);
+
+    useEffect(() => {
         const handleRoomInfo = ({ roomId, members, currentDrawerId }: RoomInfo) => {
             console.log("Received room-info:", { roomId, members, currentDrawerId });
             setRoomInfo({ roomId, members, currentDrawerId });
@@ -59,26 +67,32 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
             setRoomId("");
             navigate(`/`);
         }
-        socket.on("left-room", handleLeaveRoom);
 
+        if(!joined) {
+            navigate("/");
+            return;
+        }
+
+        socket.on("left-room", handleLeaveRoom);
         socket.on("room-info", handleRoomInfo);
+
         return () => {
             socket.off("room-info", handleRoomInfo);
             socket.off("left-room", handleLeaveRoom);
         }
     }, [joined, navigate, setJoined, setRoomId, socket, theme]);
 
-    function handleLeave() {
-        if (!joined) return;
-        socket.emit("message", { msg: `has left the game`, username });
-        socket.emit("leave-room");
-    }
-
     useEffect(() => {
         socket.emit("make-word");
 
         socket.emit("get-room-info");
     }, [socket]);
+
+    function handleLeave() {
+        if (!joined) return;
+        socket.emit("message", { msg: `has left the game`, username });
+        socket.emit("leave-room");
+    }
 
     return (
         <div className="flex flex-row gap-5 bg-bg-light h-screen justify-center">
@@ -93,6 +107,15 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
                     <p>Members: {roomInfo?.members?.length}</p>
                 </div>
             </div>
+            <div className="flex justify-center items-center flex-col">
+                {roomInfo?.members?.map((member) =>
+                    <p
+                        className="text-text-muted"
+                        key={member.id}
+                    >{member.username}</p>
+                )}
+            </div>
+
             <CanvasComponent
                 socket={socket}
                 joined={joined}
@@ -100,13 +123,17 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
                 setWordToGuess={setWordToGuess}
                 wordToGuess={wordToGuess}
                 roomInfo={roomInfo}
-                isGuessed={isGuessed} />
+                isGuessed={isGuessed}
+                canDraw={canDraw}
+            />
 
             <ChatComponent
                 socket={socket}
                 joined={joined}
                 wordToGuess={wordToGuess}
                 setIsGuessed={setIsGuessed}
+                setCanDraw={setCanDraw}
+                roomInfo={roomInfo}
             />
         </div>
     );

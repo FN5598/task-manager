@@ -12,6 +12,7 @@ type CanvasComponentProps = {
     wordToGuess: string;
     roomInfo: RoomInfo
     isGuessed: boolean;
+    canDraw: boolean;
 }
 
 interface DrawData {
@@ -27,7 +28,7 @@ interface DrawData {
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 
-export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, roomInfo, isGuessed }: CanvasComponentProps) {
+export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, isGuessed, canDraw }: CanvasComponentProps) {
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [lineWidth, setLineWidth] = useState(1);
@@ -36,8 +37,6 @@ export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, r
     const lastPosRef = useRef<{ x: number, y: number } | null>(null);
     const [isEraser, setIsEraser] = useState(false);
     const [colorPicker, setColorPicker] = useState(false);
-
-    const canDraw = socket.id === roomInfo.currentDrawerId
 
     useEffect(() => {
 
@@ -69,7 +68,7 @@ export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, r
             }
         }
 
-        function handleErase() {
+        function handleErasePage() {
             const canvas = canvasRef.current;
             if (!canvas) return;
             const ctx = canvas?.getContext("2d");
@@ -84,12 +83,12 @@ export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, r
         }
 
         socket.on("draw", handleDraw);
-        socket.on("erase-canvas", handleErase);
+        socket.on("erase-canvas", handleErasePage);
         socket.on("word-to-guess", handleWord);
 
         return () => {
             socket.off("draw", handleDraw);
-            socket.off("erase-canvas", handleErase);
+            socket.off("erase-canvas", handleErasePage);
             socket.off("word-to-guess", handleWord);
             socket.off("user-left");
             socket.off("room-info");
