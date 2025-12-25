@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
-
 type HomePageProps = {
     socket: Socket;
     setJoined: (value: boolean) => void;
@@ -42,6 +41,7 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
                 theme: `${theme}`
             });
         });
+
         return () => {
             socket.off("room-joined");
             socket.off("room-full");

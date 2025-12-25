@@ -17,6 +17,7 @@ export type RoomInfo = {
     roomId: number | "Loading ...";
     members?: { id: string, username: string }[]
     currentDrawerId?: string;
+    turnEndsAt: number | "Loading ...";
 }
 
 export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: CanvasPageProps) {
@@ -24,12 +25,14 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
     const [wordToGuess, setWordToGuess] = useState<string>('');
     const [isGuessed, setIsGuessed] = useState(false);
     const [canDraw, setCanDraw] = useState<boolean>(false)
+    const [timeLeft, setTimeLeft] = useState<number | "Loading ...">("Loading ...");
 
     const theme = localStorage.getItem("isLightTheme");
     const username = localStorage.getItem("username");
 
     const [roomInfo, setRoomInfo] = useState<RoomInfo>({
-        roomId: "Loading ..."
+        roomId: "Loading ...",
+        turnEndsAt: "Loading ..."
     });
 
     useEffect(() => {
@@ -47,9 +50,9 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
     }, [socket, joined]);
 
     useEffect(() => {
-        const handleRoomInfo = ({ roomId, members, currentDrawerId }: RoomInfo) => {
-            console.log("Received room-info:", { roomId, members, currentDrawerId });
-            setRoomInfo({ roomId, members, currentDrawerId });
+        const handleRoomInfo = ({ roomId, members, currentDrawerId, turnEndsAt }: RoomInfo) => {
+            console.log("Received room-info:", { roomId, members, currentDrawerId, turnEndsAt });
+            setRoomInfo({ roomId, members, currentDrawerId, turnEndsAt });
         };
 
         function handleLeaveRoom() {
@@ -73,12 +76,27 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
             return;
         }
 
+        function handleNextPlayer() {
+            toast.success(`Next player drawing is`, {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: `${theme}`
+            })
+        }
+
         socket.on("left-room", handleLeaveRoom);
         socket.on("room-info", handleRoomInfo);
+        socket.on("next-player", handleNextPlayer);
 
         return () => {
             socket.off("room-info", handleRoomInfo);
             socket.off("left-room", handleLeaveRoom);
+            socket.off("next-player", handleNextPlayer);
         }
     }, [joined, navigate, setJoined, setRoomId, socket, theme]);
 
@@ -88,6 +106,25 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
         socket.emit("get-room-info");
     }, [socket]);
 
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = Date.now();
+            const timeLeftMs = +roomInfo.turnEndsAt - now;
+
+            // use fractional seconds
+            const secondsLeft = Math.max(0, timeLeftMs / 1000);
+
+            setTimeLeft(Math.floor(secondsLeft));
+
+            if (secondsLeft <= 0) {
+                socket.emit("get-room-info");
+                socket.emit("next-player");
+            }
+        }, 250);
+
+        return () => clearInterval(interval);
+    }, [roomInfo.turnEndsAt, socket]);
+
     function handleLeave() {
         if (!joined) return;
         socket.emit("message", { msg: `has left the game`, username });
@@ -95,17 +132,20 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
     }
 
     return (
-        <div className="flex flex-row gap-5 bg-[#949494] h-screen justify-center">
+        <div className="flex flex-row gap-5 bg-bg-canvas h-screen justify-center">
             <div className="flex text-center flex-col w-[350px] h-[600px] mt-auto mb-auto">
-                <div className="flex justify-center">
+                <div className="flex justify-center relative">
+                    <h1 className="absolute -right-44 -top-14 text-4xl text-text">{`Time left: ${timeLeft}`}</h1>
                     <h1 className="text-text text-4xl mb-2 bg-bg p-3 rounded">Players</h1>
                 </div>
                 <div className="flex-1 items-start justify-center flex-col bg-bg-light p-2 rounded-lg">
                     {roomInfo?.members?.map((member) =>
-                        <p
-                            className={`text-3xl ${member.id === roomInfo?.currentDrawerId ? `font-bold text-text-muted` : `text-text-muted`}`}
-                            key={member.id}
-                        >{member.username}</p>
+                        <>
+                            <p
+                                className={`text-3xl ${member.id === roomInfo?.currentDrawerId ? `font-bold text-text-muted` : `text-text-muted`}`}
+                                key={member.id}
+                            >{member.username}</p>
+                        </>
                     )}
                 </div>
             </div>

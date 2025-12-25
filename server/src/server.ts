@@ -12,6 +12,7 @@ import { RoomState } from "./types/RoomState";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import taskRoutes from './routes/taskRoutes';
+import { time } from "console";
 
 const app = express();
 dotenv.config();
@@ -46,13 +47,34 @@ const io = new Server(server, {
 
 const roomWords: Map<string, string> = new Map();
 const rooms = new Map<string, RoomState>();
+const TURN_TIME = 80 * 1000;
 
 io.on('connection', (socket) => {
-    console.log("Client connected", socket.id);
+
+    function startRoomTimer(roomId: string) {
+        console.log("Started room Timer");
+        const room = rooms.get(roomId);
+        if (!room) return;
+        if (!room.turnEndsAt) {
+            room.turnEndsAt = Date.now() + TURN_TIME;
+        }
+        if (!room) return;
+        console.log("Log before Interval - Turn ends At:", room.turnEndsAt);
+        setInterval(() => {
+            const now = Date.now();
+
+            if (room.turnEndsAt <= now) {
+                socket.emit("next-player")
+                room.turnEndsAt = now + TURN_TIME;
+                console.log("turn ends at:", room.turnEndsAt);
+                console.log("current time:", now);
+            }
+        }, 250)
+    }
 
     socket.on("join-room", async (roomId: string, username: string) => {
+        console.log(roomId);
         socket.data.username = username;
-        console.log(username);
         const count = io.sockets.adapter.rooms.get(roomId)?.size || 0;
         const MAX = process.env.MAX_ROOM_CAPACITY ? parseInt(process.env.MAX_ROOM_CAPACITY) : 3;
 
@@ -68,7 +90,8 @@ io.on('connection', (socket) => {
         if (!rooms.has(roomId)) {
             rooms.set(roomId, {
                 members: [],
-                currentDrawerIndex: 0
+                currentDrawerIndex: 0,
+                turnEndsAt: Date.now() + TURN_TIME
             });
         }
 
@@ -83,21 +106,21 @@ io.on('connection', (socket) => {
                 console.log("New word created:", wordToGuess);
             }
         }
-
-        // Broadcast updated room info to all users in the room
+        startRoomTimer(roomId);
         const members = room.members.map(id => {
             const user = io.sockets.sockets.get(id);
             return {
                 id,
-                username: user?.data.username
+                username: user?.data.username,
             }
         });
-
+        const turnEndsAt = room.turnEndsAt;
         const currentDrawerId = room.members[room.currentDrawerIndex];
         io.to(roomId).emit("room-info", {
             roomId,
             members,
-            currentDrawerId
+            currentDrawerId,
+            turnEndsAt
         });
     });
 
@@ -129,11 +152,13 @@ io.on('connection', (socket) => {
         io.to(roomId).emit("word-to-guess", wordToGuess);
         io.to(roomId).emit("erase-canvas");
 
+        const turnEndsAt = room.turnEndsAt;
         const currentDrawerId = room.members[room.currentDrawerIndex];
         io.to(roomId).emit("room-info", {
             roomId,
             members,
-            currentDrawerId
+            currentDrawerId,
+            turnEndsAt
         });
     });
 
@@ -167,11 +192,13 @@ io.on('connection', (socket) => {
             }
         });
 
+        const turnEndsAt = room.turnEndsAt
         const currentDrawerId = room.members[room.currentDrawerIndex];
         io.to(roomId).emit("room-info", {
             roomId,
             members,
-            currentDrawerId
+            currentDrawerId,
+            turnEndsAt
         })
 
     });
@@ -212,8 +239,6 @@ io.on('connection', (socket) => {
         if (room.currentDrawerIndex >= room.members.length) {
             room.currentDrawerIndex = 0;
         }
-
-        // Broadcast updated room info to all remaining users in the room
         const members = room.members.map(id => {
             const user = io.sockets.sockets.get(id);
             return {

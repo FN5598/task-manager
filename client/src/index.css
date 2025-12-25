@@ -4,6 +4,9 @@
     --color-text: var(--text);
     --color-text-muted: var(--text-muted);
 
+    --color-canvas: var(--canvas);
+
+    --color-bg-canvas: var(--bg-canvas);
     --color-bg-dark: var(--bg-dark);
     --color-bg: var(--bg);
     --color-bg-light: var(--bg-light);
@@ -37,9 +40,13 @@ input {
     --text: hsl(300 0% 95%);
     --text-muted: hsl(300 0% 69%);
 
+    --canvas: hsl(300,0%,100%);
+
+    --bg-canvas: hsl(300 0% 13%);
+
     --bg-dark: hsl(336 0% 1%);
     --bg: hsl(300 0% 4%);
-    --bg-light: hsl(300 0% 100%);
+    --bg-light: hsl(0 0% 9%);
 
     --highlight: hsl(330 0% 39%);
 
@@ -49,20 +56,21 @@ input {
     --primary: hsl(220 78% 76%);
     --secondary: hsl(40 53% 60%);
 
-    --danger: rgb(205,14,25);
-    --warning: rgb(255,14,25);
+    --danger: rgb(205, 14, 25);
+    --warning: rgb(255, 14, 25);
     --success: hsl(146 17% 59%);
     --info: hsl(217 28% 65%);
 }
 
 .light {
-    --text: hsl(300 0% 4%);
-    --text-muted: hsl(0 0% 28%);
+    --text: hsl(300 0% 95%);
+    --text-muted: hsl(300 0% 69%);
+    
+    --bg-canvas: hsl(0 0% 58%);
 
-    /* --bg-dark: hsl(0 0% 90%); */
-    --bg: hsl(300 0% 95%);
-
-    --bg-light: hsl(300 50% 100%);
+    --bg: hsl(300 0% 4%);
+    --bg-dark: hsl(336 0% 1%);
+    --bg-light: hsl(300 0% 100%);
 
     --highlight: hsl(300 50% 100%);
 
@@ -72,8 +80,8 @@ input {
     --primary: hsl(221 49% 33%);
     --secondary: hsl(44 100% 14%);
 
-    --danger: hsl(9 21% 41%);
-    --warning: hsl(52 23% 34%);
+    --danger: rgb(205, 14, 25);
+    --warning: rgb(255, 14, 25);
     --success: hsl(147 19% 36%);
     --info: hsl(217 22% 41%);
 }

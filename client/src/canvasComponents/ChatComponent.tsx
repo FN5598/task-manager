@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Socket } from "socket.io-client";
-import { toast } from "react-toastify"
 import { RoomInfo } from "../pages/CanvasPage";
 
 type ChatComponentProps = {
@@ -25,19 +24,6 @@ export function ChatComponent({ socket, joined, wordToGuess, setIsGuessed, setCa
             setData((prevData) => [...prevData, `${username}: ${msg}`]);
         }
 
-        function handleNextPlayer() {
-            toast.success(`Next player drawing is`, {
-                position: "top-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: `${theme}`
-            })
-        }
-
         function handleRoomInfo({ currentDrawerId }: { currentDrawerId: string }) {
             // Update canDraw based on whether this user is the current drawer
             const isCurrentDrawer = socket.id === currentDrawerId;
@@ -46,13 +32,11 @@ export function ChatComponent({ socket, joined, wordToGuess, setIsGuessed, setCa
         }
 
         socket.on("message", handleMessage);
-        socket.on("next-player", handleNextPlayer);
         socket.on("room-info", handleRoomInfo);
 
         // Cleanup listeners on component unmount
         return () => {
             socket.off("message", handleMessage);
-            socket.off("next-player", handleNextPlayer);
             socket.off("room-info", handleRoomInfo);
         };
     }, [socket, theme, setIsGuessed, setCanDraw]);
@@ -64,10 +48,6 @@ export function ChatComponent({ socket, joined, wordToGuess, setIsGuessed, setCa
             if (input.toLowerCase() === wordToGuess.toLowerCase()) {
                 socket.emit("message", { msg: `has guessed the word`, username });
                 setIsGuessed(true);
-                setTimeout(() => {
-                    socket.emit("next-player");
-                    setIsGuessed(false);
-                }, 2000)
             } else {
                 socket.emit("message", { msg: input, username });
             }
@@ -87,7 +67,7 @@ export function ChatComponent({ socket, joined, wordToGuess, setIsGuessed, setCa
                 {data.map((message, index) => (
                     <p
                         key={index}
-                        className="text-bg font-medium"
+                        className="text-text font-medium"
                     >{message}</p>
                 ))}
             </div>

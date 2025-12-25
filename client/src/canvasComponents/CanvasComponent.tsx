@@ -207,7 +207,7 @@ export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, i
                     height: `${CANVAS_HEIGHT}px`,
                     display: 'block'
                 }}
-                className="border border-color-bg-light bg-bg-light cursor-crosshair w-[800px] h-[600px] mt-4.5"
+                className="border-8 border-gray-600 rounded-xl bg-canvas cursor-crosshair w-[800px] h-[600px] mt-4.5 "
                 ref={canvasRef}
                 width={CANVAS_WIDTH}
                 height={CANVAS_HEIGHT}
