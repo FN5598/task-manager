@@ -8,11 +8,11 @@ import cookieParser from "cookie-parser";
 import { setupSwagger } from "./config/swagger";
 import { fetchRandomWord } from "./utils/fetchRandomWord";
 import { RoomState } from "./types/RoomState";
+import { Socket } from "socket.io";
 
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import taskRoutes from './routes/taskRoutes';
-import { time } from "console";
 
 const app = express();
 dotenv.config();
@@ -50,6 +50,8 @@ const rooms = new Map<string, RoomState>();
 const TURN_TIME = 80 * 1000;
 
 io.on('connection', (socket) => {
+    console.log("New socket connected:", socket.id)
+
 
     function startRoomTimer(roomId: string) {
         console.log("Started room Timer");
@@ -59,69 +61,93 @@ io.on('connection', (socket) => {
             room.turnEndsAt = Date.now() + TURN_TIME;
         }
         if (!room) return;
-        console.log("Log before Interval - Turn ends At:", room.turnEndsAt);
-        setInterval(() => {
+        room.interval = setInterval(() => {
             const now = Date.now();
 
-            if (room.turnEndsAt <= now) {
+            if (room.turnEndsAt! <= now) {
                 socket.emit("next-player")
                 room.turnEndsAt = now + TURN_TIME;
-                console.log("turn ends at:", room.turnEndsAt);
-                console.log("current time:", now);
             }
         }, 250)
+    };
+
+    function createRoom(): RoomState {
+        const roomId = crypto.randomUUID();
+
+        const room: RoomState = {
+            roomId: roomId,
+            members: [],
+            currentDrawerIndex: 0,
+            turnEndsAt: null,
+            maxPlayers: 3
+        };
+
+        rooms.set(roomId, room);
+        return room;
     }
 
-    socket.on("join-room", async (roomId: string, username: string) => {
-        console.log(roomId);
-        socket.data.username = username;
-        const count = io.sockets.adapter.rooms.get(roomId)?.size || 0;
-        const MAX = process.env.MAX_ROOM_CAPACITY ? parseInt(process.env.MAX_ROOM_CAPACITY) : 3;
 
-        if (count >= MAX) {
-            socket.emit("room-full");
-            return;
-        }
-
-        socket.join(roomId);
-        socket.data.roomId = roomId;
-        socket.emit("room-joined", roomId);
-
-        if (!rooms.has(roomId)) {
-            rooms.set(roomId, {
-                members: [],
-                currentDrawerIndex: 0,
-                turnEndsAt: Date.now() + TURN_TIME
-            });
-        }
-
-        const room = rooms.get(roomId)!;
-        room.members.push(socket.id);
-
-        if (!roomWords.has(roomId) || count === 0) {
-            const wordObj = await fetchRandomWord();
-            const wordToGuess = wordObj?.word;
-            if (wordToGuess) {
-                roomWords.set(roomId, wordToGuess);
-                console.log("New word created:", wordToGuess);
+    function findAvailableRoom(): RoomState | null {
+        for (const room of rooms.values()) {
+            if (room.members.length < room.maxPlayers) {
+                return room;
             }
         }
+        return null;
+    }
+
+    async function joinRoom(roomId: string, socket: Socket, username: string) {
+        console.log("Join room Func called");
+
+        socket.join(roomId);
+
+        socket.data.username = username;
+        socket.data.roomId = roomId;
+
+        const room = rooms.get(roomId);
+        if (!room) return;
+
+        room.members.push(socket.id);
+        socket.emit("room-joined", roomId);
+
         startRoomTimer(roomId);
+
+        if (!roomWords.has(roomId)) {
+            const wordObj = await fetchRandomWord();
+            if (wordObj?.word) {
+                roomWords.set(roomId, wordObj.word);
+                console.log("New word craeted:", wordObj.word);
+            }
+        }
+
         const members = room.members.map(id => {
             const user = io.sockets.sockets.get(id);
             return {
                 id,
-                username: user?.data.username,
-            }
+                username: user?.data.username
+            };
         });
-        const turnEndsAt = room.turnEndsAt;
+
         const currentDrawerId = room.members[room.currentDrawerIndex];
+
         io.to(roomId).emit("room-info", {
             roomId,
             members,
             currentDrawerId,
-            turnEndsAt
-        });
+            turnEndsAt: room.turnEndsAt
+        })
+    }
+
+    socket.on("find-room", async ({ username }: { username: string }) => {
+        let room = findAvailableRoom();
+        console.log("Found availible rooms:", room);
+
+        if (!room) {
+            room = createRoom();
+            console.log("Created room:", room);
+        }
+
+        await joinRoom(room.roomId, socket, username);
     });
 
     socket.on("next-player", async () => {
@@ -236,9 +262,11 @@ io.on('connection', (socket) => {
         socket.data.roomId = null;
         room.members = room.members.filter(id => id !== socket.id);
 
-        if (room.currentDrawerIndex >= room.members.length) {
-            room.currentDrawerIndex = 0;
+        if (room.members.length === 0) {
+            clearInterval(room.interval);
+            rooms.delete(room.roomId);
         }
+
         const members = room.members.map(id => {
             const user = io.sockets.sockets.get(id);
             return {

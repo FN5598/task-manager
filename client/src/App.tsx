@@ -7,23 +7,12 @@ import { useEffect, useState } from 'react';
 import { CanvasPage } from "./pages/CanvasPage";
 import { io, Socket } from "socket.io-client";
 
-// Initialize socket connection outside the component
-const socket: Socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000", { autoConnect: false });
+const socket: Socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000", { autoConnect: true });
 
 function App() {
 
-  const username = localStorage.getItem("username");
-
   const [joined, setJoined] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string>("");
-
-  function joinRoom(roomId: string) {
-    if (!socket.connected) {
-      socket.connect();
-    }
-    socket.emit("join-room", roomId, username);
-    socket.emit("message", { msg: `has joined the game`, username });
-  }
 
   useEffect(() => {
     const isLightTheme = localStorage.getItem("isLightTheme");
@@ -58,8 +47,7 @@ function App() {
         <Route index element={<HomePage
           socket={socket}
           setJoined={setJoined}
-          setRoomId={setRoomId}
-          joinRoom={joinRoom} />} />
+          setRoomId={setRoomId} />} />
 
         {/* Auth routes */}
         <Route path="/login" element={<LoginPage />} />

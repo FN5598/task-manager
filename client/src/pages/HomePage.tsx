@@ -1,17 +1,15 @@
-import { HeaderComponent } from "../components/HeaderComponent";
 import { Socket } from "socket.io-client";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 type HomePageProps = {
     socket: Socket;
     setJoined: (value: boolean) => void;
     setRoomId: (value: string) => void;
-    joinRoom: (roomId: string) => void;
 }
 
-export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePageProps) {
+export function HomePage({ socket, setJoined, setRoomId }: HomePageProps) {
     const theme = localStorage.getItem("isLightTheme");
 
     const navigate = useNavigate();
@@ -25,26 +23,8 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
             navigate(`/canvas/${roomId}`)
         });
 
-        socket.on("room-full", (roomId: string) => {
-            console.log("Room is full:", roomId);
-            setJoined(false);
-            setRoomId("");
-            navigate(`/`);
-            toast.error("Room is full. Please try another room.", {
-                position: "top-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: `${theme}`
-            });
-        });
-
         return () => {
             socket.off("room-joined");
-            socket.off("room-full");
         }
     }, [socket, setJoined, setRoomId, theme, navigate]);
 
@@ -55,41 +35,55 @@ export function HomePage({ socket, setJoined, setRoomId, joinRoom }: HomePagePro
         }
     }
 
-    function handleSubmit() {
-        localStorage.setItem("username", username);
-        socket.emit("set-username", username);
+    function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+        if (e.key === "Enter") {
+            localStorage.setItem("username", username);
+            socket.emit("set-username", username);
+        }
+    }
+
+    function handleRoomJoin() {
+        if (!username) {
+            toast.warn("Please type your username", {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: `${theme}`
+            })
+            return;
+        }
+        socket.emit("find-room", { username });
+        console.log("emitted find room");
     }
     return (
-        <div>
-            <HeaderComponent />
-
-            <div className="h-screen bg-bg text-text">
-
-                <div>
-                    <h1>{ }</h1>
-                </div>
-                <button
-                    onClick={() => joinRoom("room 1")}
-                    className="pl-40"
-                >JOIN ROOM 1</button>
-                <button
-                    onClick={() => joinRoom("room 2")}
-                    className="pl-20"
-                >JOIN ROOM 2</button>
+        <div className="min-h-screen bg-bg flex items-center justify-center">
+            <div className="bg-white/5 backdrop-blur-md p-8 rounded-2xl shadow-lg w-full max-w-sm">
+                <h1 className="text-text text-2xl font-semibold text-center mb-6">
+                    Join Room
+                </h1>
 
                 <input
                     type="text"
-                    className="border-2 border-gray-300 p-2 rounded-lg mt-4 ml-20"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-text bg-transparent"
                     placeholder="Enter username"
                     name="username"
                     onChange={handleChange}
                     value={username}
-                ></input>
+                    onKeyDown={handleKeyDown}
+                />
+
                 <button
-                    onClick={handleSubmit}
-                    className="ml-4 p-2 bg-blue-500 text-white rounded-lg cursor-pointer"
-                >Submit</button>
+                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700 transition text-white font-medium py-2 rounded-lg"
+                    onClick={handleRoomJoin}
+                >
+                    Join Room
+                </button>
             </div>
         </div>
+
     );
 }

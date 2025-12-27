@@ -13,6 +13,7 @@ type CanvasComponentProps = {
     roomInfo: RoomInfo
     isGuessed: boolean;
     canDraw: boolean;
+    timeLeft: number | "Loading ...";
 }
 
 interface DrawData {
@@ -28,7 +29,7 @@ interface DrawData {
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 
-export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, isGuessed, canDraw }: CanvasComponentProps) {
+export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, isGuessed, canDraw, timeLeft }: CanvasComponentProps) {
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [lineWidth, setLineWidth] = useState(1);
@@ -187,7 +188,8 @@ export function CanvasComponent({ socket, roomId, wordToGuess, setWordToGuess, i
 
     return (
         <div className="text-text flex flex-col justify-center p-10">
-            <div className="flex justify-center text-2xl">
+            <div className="flex justify-center text-2xl relative">
+                <h1 className="absolute left-0 bottom-0.5 text-4xl text-text">{`Time left: ${timeLeft}`}</h1>
                 {wordToGuess && (transformWordToLetters(wordToGuess)?.map((char, index) => (
                     canDraw ?
                         <div key={index} className={`inline-block w-5 mr-1 ${char !== " " ? `border-b border-b-blue-100` : `border-0`} text-center`}>

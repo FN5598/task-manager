@@ -4,6 +4,7 @@ import { ChatComponent } from "../canvasComponents/ChatComponent";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import settingsIcon from "../assets/settings.png";
 
 type CanvasPageProps = {
     socket: Socket;
@@ -77,16 +78,9 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
         }
 
         function handleNextPlayer() {
-            toast.success(`Next player drawing is`, {
-                position: "top-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: `${theme}`
-            })
+            const playerUsername = roomInfo.members?.find(member => member.id === roomInfo.currentDrawerId)?.username;
+
+            socket.emit("message", { msg: "is the next player drawing", username: playerUsername });
         }
 
         socket.on("left-room", handleLeaveRoom);
@@ -98,7 +92,8 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
             socket.off("left-room", handleLeaveRoom);
             socket.off("next-player", handleNextPlayer);
         }
-    }, [joined, navigate, setJoined, setRoomId, socket, theme]);
+    }, [joined, navigate, setJoined, setRoomId, socket, theme, roomInfo.currentDrawerId, roomInfo.members]);
+
 
     useEffect(() => {
         socket.emit("make-word");
@@ -117,6 +112,7 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
             setTimeLeft(Math.floor(secondsLeft));
 
             if (secondsLeft <= 0) {
+                setIsGuessed(false);
                 socket.emit("get-room-info");
                 socket.emit("next-player");
             }
@@ -133,12 +129,15 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
 
     return (
         <div className="flex flex-row gap-5 bg-bg-canvas h-screen justify-center">
-            <div className="flex text-center flex-col w-[350px] h-[600px] mt-auto mb-auto">
+            <div className="flex text-center flex-col w-[400px] mt-auto mb-auto">
                 <div className="flex justify-center relative">
-                    <h1 className="absolute -right-44 -top-14 text-4xl text-text">{`Time left: ${timeLeft}`}</h1>
-                    <h1 className="text-text text-4xl mb-2 bg-bg p-3 rounded">Players</h1>
+                    <div className="text-text bg-bg p-2 rounded mb-2">
+                        <p>Room ID: {roomInfo?.roomId}</p>
+                    </div>
+
                 </div>
-                <div className="flex-1 items-start justify-center flex-col bg-bg-light p-2 rounded-lg">
+                <div className="items-start justify-center flex-col bg-bg-light p-2 rounded-lg h-[500px]">
+                    <p className="text-text-muted text-4xl font-bold mb-4">Current Players:</p>
                     {roomInfo?.members?.map((member) =>
                         <>
                             <p
@@ -159,6 +158,7 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
                 roomInfo={roomInfo}
                 isGuessed={isGuessed}
                 canDraw={canDraw}
+                timeLeft={timeLeft}
             />
 
             <div className="flex gap-2 flex-col justify-center">
@@ -167,10 +167,10 @@ export function CanvasPage({ socket, setJoined, joined, setRoomId, roomId }: Can
                         onClick={() => handleLeave()}
                         className="text-text bg-warning hover:bg-danger transition-all p-2 rounded cursor-pointer">Leave room</button>
                     <div className="text-text bg-bg p-2 rounded">
-                        <p>Room ID: {roomInfo?.roomId}</p>
-                    </div>
-                    <div className="text-text bg-bg p-2 rounded">
                         <p>Members: {roomInfo?.members?.length}</p>
+                    </div>
+                    <div className="text-text bg-bg p-2 rounded cursor-pointer">
+                        <img src={settingsIcon} />
                     </div>
                 </div>
                 <ChatComponent
